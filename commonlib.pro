@@ -25,13 +25,16 @@ INCLUDEPATH = .\
               tcp\
               timer\
               udp\
+              file\
               zprint
 
 
 SOURCES += \
     bufmodel/ZBufModel.cpp \
     date/com_date.cpp \
+    file/zfile.cpp \
     prodata/sem/syssem.cpp \
+    prodata/zsystemsem.cpp \
     socket/socket.cpp \
     tcp/tcp_class.cpp \
     tcp/tcp_client.cpp \
@@ -43,6 +46,7 @@ HEADERS += \
     bufmodel/ZBufModel.h \
     date/com_date.h \
     epoll/e_poll.h \
+    file/zfile.h \
     mutex/mutex_class.h \
     prodata/clist.h \
     prodata/pro_data.h \
@@ -52,6 +56,7 @@ HEADERS += \
     prodata/sharemem.h \
     prodata/zmap.h \
     prodata/zmsg.h \
+    prodata/zsystemsem.h \
     reflect/reflect.h \
     reflect/xmlprocess.h \
     sempro/semprocess.h \

@@ -89,6 +89,7 @@ template < class T >
 int Sem_Share_Data< T >::write_send_data(const T & val)
 {
     lock_guard<mutex> lock(m_lock);
+    uint count = *
     if(m_num >= bufsize)
     {
         zprintf1("write off \n");
