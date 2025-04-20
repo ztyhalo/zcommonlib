@@ -26,22 +26,24 @@ template < class T >
 class creatdata
 {
   public:
-    T*    data;
-    int   size;      //表示为sizeof(T)*num;
-    int   creatmark; //表示是自己创建的
+    T*    m_data;
+    int   m_size;      //表示为sizeof(T)*num;
+    int   m_creatmark; //表示是自己创建的
 
   public:
-    creatdata(T* addr = NULL, int sz = 0):data(addr),size(sz),creatmark(0)
+    creatdata(T* addr = NULL, int sz = 0):m_data(addr),m_size(sz),m_creatmark(0)
     {
         ;
     }
     virtual ~creatdata()
     {
 
-        if (data != NULL && creatmark == 1)
+        if (m_data != NULL && m_creatmark == 1)
         {
-            delete[] data;
-            data = NULL;
+            delete[] m_data;
+            m_data = NULL;
+            m_creatmark = 0;
+            m_size = 0;
             zprintf3("creatdata delete");
         }
     }
@@ -56,24 +58,24 @@ class creatdata
 template < class T >
 void creatdata< T >::data_init(T* add, int siz)
 {
-    if (data != NULL && creatmark == 1)
+    if (m_data != NULL && m_creatmark == 1)
     {
-        delete[] data;
-        data = NULL;
-        creatmark = 0;
+        delete[] m_data;
+        m_data = NULL;
+        m_creatmark = 0;
     }
-    data = add;
-    size = siz;
+    m_data = add;
+    m_size = siz;
 }
 
 template < class T >
 int creatdata< T >::creat_data(int sz)
 {
-    data = new T[sz];
-    if (data != NULL)
+    m_data = new T[sz];
+    if (m_data != NULL)
     {
-        creatmark = 1;
-        size = sz * sizeof(T);
+        m_creatmark = 1;
+        m_size = sz * sizeof(T);
         return 0;
     }
     return -1;
@@ -82,35 +84,35 @@ int creatdata< T >::creat_data(int sz)
 template < class T >
 void creatdata< T >::set_data(uint add, const T & val)
 {
-    if (add >= size / sizeof(T))
+    if (add >= m_size / sizeof(T))
     {
         zprintf1("set data off\n");
         return;
     }
     // data[add] = val;
-    memcpy(data + add, &val, sizeof(T));
+    memcpy(m_data + add, &val, sizeof(T));
 }
 
 template < class T >
 T creatdata< T >::get_data(uint add)
 {
-    if (add >= size / sizeof(T))
+    if (add >= m_size / sizeof(T))
     {
         zprintf1("get data off\n");
-        return *data;
+        return *m_data;
     }
-    return *(data + add);
+    return *(m_data + add);
 }
 
 template < class T >
 int creatdata< T >::get_data(uint add, T & val)
 {
-    if (add >= size / sizeof(T))
+    if (add >= m_size / sizeof(T))
     {
         zprintf1("get data off\n");
         return -1;
     }
-    val = data[add];
+    val = m_data[add];
     // val = *(data + add);
     return 0;
 }

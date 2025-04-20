@@ -14,6 +14,8 @@ ZSystemSem::ZSystemSem():m_unix_key(-1),m_sem(-1),m_initVal(0),m_createdFile(fal
 
 inline string ZSystemSem::makeKeyFileName() const
 {
+    if(m_key.empty())
+        return string();
     unsigned char hash[SHA256_DIGEST_LENGTH];
     SHA256_CTX sha256;
     SHA256_Init(&sha256);
@@ -24,7 +26,8 @@ inline string ZSystemSem::makeKeyFileName() const
     for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
         ss << hex << setw(2) << setfill('0') << (int)hash[i];
     }
-    return ss.str();
+    string retString = "/tmp/zipc_systemsem_" + ss.str();
+    return retString;
 }
 
 int  ZSystemSem::createUnixKeyFile(const string &fileName)
@@ -139,4 +142,104 @@ void ZSystemSem::setKey(const string &key, int initVal, AccessMode mode)
         zprintf1("% is have!\n", key.c_str());
         return;
     }
+    if(key == m_key && mode == Create && m_createdSem && m_createdFile)
+    {
+        m_initVal = initVal;
+        m_unix_key = -1;
+        handle(mode);
+        return;
+    }
+
+    cleanHandle();
+
+    m_key = key;
+    m_initVal = initVal;
+    m_fileName = makeKeyFileName();
+    handle(mode);
+}
+
+string ZSystemSem::key() const
+{
+    return m_key;
+}
+
+bool ZSystemSem::modifySemaphore(int count)
+{
+    if(-1 == handle())
+    {
+        return false;
+    }
+    struct sembuf operation;
+    operation.sem_num = 0;
+    operation.sem_op = count;
+    operation.sem_flg = SEM_UNDO;
+
+    // register int res;
+    int res;
+    EINTR_LOOP(res, semop(m_sem, &operation, 1));
+    if( -1 == res)
+    {
+        if(errno == EINVAL || errno == EIDRM)
+        {
+            m_sem = -1;
+            cleanHandle();
+            handle();
+            return modifySemaphore(count);
+        }
+        zprintf1("semop m_sem %d error!\n", m_sem);
+        return false;
+    }
+    return true;
+}
+
+ZSystemSem::SemOpTimeState ZSystemSem::modifySemaphore(int count, int ms)
+{
+    if(-1 == handle())
+    {
+        return PError;
+    }
+    struct sembuf operation;
+    operation.sem_num = 0;
+    operation.sem_op = count;
+    operation.sem_flg = SEM_UNDO;
+
+    struct timespec timeout;
+    timeout.tv_sec  = (ms / 1000);
+    timeout.tv_nsec = (ms - timeout.tv_sec * 1000L) * 1000000L;
+
+    // register int res;
+    int res;
+    EINTR_LOOP(res, semtimedop(m_sem, &operation, 1, &timeout));
+    if( -1 == res)
+    {
+        if(errno == EINVAL || errno == EIDRM)
+        {
+            m_sem = -1;
+            cleanHandle();
+            handle();
+            return modifySemaphore(count, ms);
+        }
+        else if(errno == ETIMEDOUT)
+            return PTimeOver;
+        zprintf1("semop m_sem %d error!\n", m_sem);
+        return PError;
+    }
+    return Pok;
+}
+
+bool ZSystemSem::acquire()
+{
+   return modifySemaphore(-1);
+}
+
+bool ZSystemSem::release(int n)
+{
+    if(n == 0)
+        return true;
+    if(n < 0)
+    {
+        zprintf1("system sem realease n is negative!\n");
+        return false;
+    }
+    return modifySemaphore(n);
 }

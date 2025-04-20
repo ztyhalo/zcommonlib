@@ -51,6 +51,8 @@ HEADERS += \
     prodata/clist.h \
     prodata/pro_data.h \
     prodata/ptdataapp.h \
+    prodata/qtsemshare.h \
+    prodata/qtsharemem.h \
     prodata/sem/syssem.h \
     prodata/semshare.h \
     prodata/sharemem.h \

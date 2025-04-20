@@ -9,7 +9,7 @@
 #ifndef __SEMSHARE_H__
 #define __SEMSHARE_H__
 
-#include <mutex>
+// #include <mutex>
 #include "prodata/sharemem.h"
 #include "syssem.h"
 
@@ -22,65 +22,84 @@ template < class T >
 class Sem_Share_Data : public ShareDataT< T >
 {
   public:
-    int   semid;
-    int  bufsize;
+    int     m_semid;
+    int     m_bufsize;
+    int     m_created;
 
-    uint* rd_buf_p;
-    uint* wr_buf_p;
-    uint *  m_num_p;
-    key_t sem_key;
-    mutex m_lock;
+    int *   m_rd_p;
+    int *   m_wr_p;
+    int *   m_num_p;
+    key_t   m_sem_key;
 
   public:
-    Sem_Share_Data():semid(0),m_num_p(NULL),sem_key(19860610),bufsize(0),rd_buf_p(NULL),wr_buf_p(NULL)
+    Sem_Share_Data():m_semid(-1),m_created(0),m_num_p(NULL),
+          m_sem_key(19860610),m_bufsize(0),m_rd_p(NULL),m_wr_p(NULL)
     {
         ;
     }
-    explicit Sem_Share_Data(uint sz, key_t semkey = 19860610, key_t sharekey = 20130410)
+    explicit Sem_Share_Data(uint size, key_t semkey = 19860610, key_t sharekey = 20130410)
     {
-        creat_sem_data(sz, semkey, sharekey);
+        creat_sem_data(size, semkey, sharekey);
     }
     virtual ~Sem_Share_Data()
     {
         zprintf3("Sem_Share_Data destruct!\n");
+        cleanHandle();
+
     }
-    int creat_sem_data(uint sz, key_t semkey = 19860610, key_t sharekey = 20130410);
+    void cleanHandle()
+    {
+        if(m_created)
+        {
+            if(-1 != m_semid)
+            {
+                if(-1 == semctl(m_semid, 0, IPC_RMID, 0))
+                {
+                    zprintf1("Sem_Share_Data rm msem %d error!\n", m_semid);
+                }
+                m_semid = -1;
+            }
+            m_created = 0;
+        }
+    }
+    int creat_sem_data(uint size, key_t semkey = 19860610, key_t sharekey = 20130410);
     int write_send_data(const T & val);
     int read_send_data(T& val);
     int wait_thread_sem(void);
 };
 
 template < class T >
-int Sem_Share_Data< T >::creat_sem_data(uint sz, key_t semkey, key_t sharekey)
+int Sem_Share_Data< T >::creat_sem_data(uint size, key_t semkey, key_t sharekey)
 {
     int   err  = 0;
-    uint* midp = NULL;
+    int* midp = NULL;
 
-    lock_guard<mutex> lock(m_lock);
     zprintf3("share key is %d\n", sharekey);
+    cleanHandle();
 
-    int aline = Z_MEM_ALIGEN_SIZE(sz, 4);
-    int alinesize = Z_MEM_ALIGEN_SIZE(aline + sizeof(uint) * 3, 4);
+    int aline = Z_MEM_ALIGEN_SIZE(size, 4);
+    int alinesize = Z_MEM_ALIGEN_SIZE(aline + sizeof(int) * 3, 4);
 
 
     err     = this->creat_data(alinesize, sharekey);
-    bufsize = sz / sizeof(T);
+    m_bufsize = size / sizeof(T);
     if (err == 0)
     {
-        midp = (uint*)this->data;
+        ZLockerClass<Sem_Share_Data< T >> lock(this);
+        midp = (int*)this->m_memory;
         midp += aline/4;
-        rd_buf_p  = midp;
-        wr_buf_p  = midp + 1;
+        m_rd_p  = midp;
+        m_wr_p  = midp + 1;
         m_num_p = midp + 2;
-        *rd_buf_p = 0;
-        *wr_buf_p = 0;
+        *m_rd_p = 0;
+        *m_wr_p = 0;
         *m_num_p = 0;
-        semid     = create_sem(semkey, 0);
-        if(semid <= 0)
+        m_semid     = new_create_sem(semkey, 0, m_created);
+        if(m_semid <= 0)
         {
             zprintf1("Sem_Share_Data create_sem %d error !\n",semkey);
         }
-        err       = semid > 0 ? 0 : -2;
+        err = m_semid > 0 ? 0 : -2;
     }
     return err;
 }
@@ -88,50 +107,53 @@ int Sem_Share_Data< T >::creat_sem_data(uint sz, key_t semkey, key_t sharekey)
 template < class T >
 int Sem_Share_Data< T >::write_send_data(const T & val)
 {
-    lock_guard<mutex> lock(m_lock);
-    uint count = *
-    if(m_num >= bufsize)
+
+    ZLockerClass<Sem_Share_Data< T >> lock(this);
+    uint count = *m_num_p;
+    if(count >= m_bufsize)
     {
         zprintf1("write off \n");
         return -1;
     }
-    uint mid = *wr_buf_p;
+    uint mid = *m_wr_p;
 
     this->set_data(mid, val);
     mid++;
-    mid %= bufsize;
-    *wr_buf_p = mid;
-    m_num++;
-    sem_v(semid);
+    mid %= m_bufsize;
+    *m_wr_p = mid;
+    count++;
+    *m_num_p = count;
+    sem_v(m_semid);
     return 0;
 }
 
 template < class T >
-int Sem_Share_Data< T >::read_send_data(T& val)
+int Sem_Share_Data< T >::read_send_data(T & val)
 {
-    lock_guard<mutex> lock(m_lock);
-    uint mid = *rd_buf_p;
-
-    if(m_num <= 0)
+    ZLockerClass<Sem_Share_Data< T >> lock(this);
+    int count = *m_num_p;
+    if(count <= 0)
     {
         zprintf3("read send data error!\n");
         return -1;
     }
+    int mid = *m_rd_p;
 
     this->get_data(mid, val);
 
     mid++;
-    mid %= bufsize;
+    mid %= m_bufsize;
 
-    *rd_buf_p = mid;
-    m_num--;
+    *m_rd_p = mid;
+    count--;
+    *m_num_p = count;
 
     return 0;
 }
 template < class T >
 int Sem_Share_Data< T >::wait_thread_sem(void)
 {
-    if (sem_p(semid) == 0)
+    if (sem_p(m_semid) == 0)
         return 0;
     else
         return -1;
@@ -148,7 +170,8 @@ class Sem_Pth_Data : public Sem_Share_Data< T >, public Call_B_T< T, FAT >
     }
     virtual ~Sem_Pth_Data()
     {
-          zprintf3("Sem_Pth_Data destruct!\n");
+        zprintf3("Sem_Pth_Data destruct!\n");
+        this->running = 0;
     }
     void run();
 };
