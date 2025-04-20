@@ -9,7 +9,7 @@
 #ifndef __QTSEMSHARE_H__
 #define __QTSEMSHARE_H__
 
-#include "prodata/sharemem.h"
+#include "qtsharemem.h"
 #include "syssem.h"
 
 using namespace  std;
@@ -21,12 +21,12 @@ template < class T >
 class Sem_Qt_Data : public QTShareDataT< T >
 {
   public:
-    int       semid;
-    int      bufsize;
-    int      m_num;
-    uint16_t* rd_buf_p;
-    uint16_t* wr_buf_p;
-    key_t     sem_key;
+    int         semid;
+    int         bufsize;
+    int         m_num;
+    uint16_t*   rd_buf_p;
+    uint16_t*   wr_buf_p;
+    key_t       sem_key;
 
   public:
     Sem_Qt_Data():semid(0),bufsize(0),m_num(0),rd_buf_p(NULL),wr_buf_p(NULL),sem_key(19860610)

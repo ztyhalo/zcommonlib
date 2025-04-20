@@ -28,14 +28,14 @@ class QT_Share_MemT
     QSharedMemory lhshare;
 
   public:
-    QString shm_key;
-    T*      data;
+    QString m_shmKey;
+    T*      m_data;
 
   public:
-    QT_Share_MemT():shm_key("lhshare")
+    QT_Share_MemT():m_shmKey("lhshare")
     {
-        data = NULL;
-        lhshare.setKey(shm_key);
+        m_data = NULL;
+        lhshare.setKey(m_shmKey);
     }
     virtual ~QT_Share_MemT()
     {
@@ -65,21 +65,21 @@ void QT_Share_MemT< T >::unlock_qtshare(void)
 }
 
 template < class T >
-int QT_Share_MemT< T >::creat_data(int siz)
+int QT_Share_MemT< T >::creat_data(int size)
 {
 
-    lhshare.setKey(shm_key);
+    lhshare.setKey(m_shmKey);
     if (lhshare.isAttached())
     {
         zprintf2("qt share have attach!\n");
         lhshare.detach();
     }
 
-    if (!lhshare.create(siz))
+    if (!lhshare.create(size))
     {
         zprintf2("qt share creat fail!\n");
 
-        if (lhshare.error() == 4) //已经存在
+        if (lhshare.error() == QSharedMemory::AlreadyExists) //已经存在
         {
             if (!lhshare.attach())
             {
@@ -92,10 +92,13 @@ int QT_Share_MemT< T >::creat_data(int siz)
             }
         }
         else
+        {
+            zprintf1("QT_Share_MemT creat data fail!\n");
             return -1;
+        }
     }
 
-    this->data = (T*) lhshare.data();
+    this->m_data = (T*) lhshare.data();
 
     return 0;
 }
@@ -103,9 +106,9 @@ int QT_Share_MemT< T >::creat_data(int siz)
 template < class T >
 T* QT_Share_MemT< T >::creat_data(int size, const QString & keyid)
 {
-    shm_key = keyid;
+    m_shmKey = keyid;
     if (creat_data(size) == 0)
-        return this->data;
+        return this->m_data;
     return NULL;
 }
 
@@ -117,21 +120,21 @@ class QTShareDataT : public creatdata< T >
     QSharedMemory lhshare;
 
   public:
-    QString shm_key;
+    QString m_shmKey;
 
   public:
-    QTShareDataT():shm_key("lhshare")
+    QTShareDataT():m_shmKey("lhshare")
     {
-        lhshare.setKey(shm_key);
+        lhshare.setKey(m_shmKey);
     }
     virtual ~QTShareDataT()
     {
 
-        if (this->data != NULL && this->creatmark == 1)
+        if (this->m_data != NULL && this->m_creatmark == 1)
         {
             lhshare.detach();
-            this->data      = NULL;
-            this->creatmark = 0;
+            this->m_data      = NULL;
+            this->m_creatmark = 0;
         }
         zprintf3("destory QTShareDataT!\n");
     }
@@ -164,21 +167,21 @@ void QTShareDataT< T >::unlock_qtshare(void)
 }
 
 template < class T >
-int QTShareDataT< T >::creat_data(int siz)
+int QTShareDataT< T >::creat_data(int size)
 {
 
-    lhshare.setKey(shm_key);
+    lhshare.setKey(m_shmKey);
     if (lhshare.isAttached())
     {
         zprintf2("qt share have attach!\n");
         lhshare.detach();
     }
 
-    if (!lhshare.create(siz))
+    if (!lhshare.create(size))
     {
         zprintf2("qt share creat fail!\n");
 
-        if (lhshare.error() == 4) //已经存在
+        if (lhshare.error() == QSharedMemory::AlreadyExists) //已经存在
         {
             if (!lhshare.attach())
             {
@@ -187,14 +190,21 @@ int QTShareDataT< T >::creat_data(int siz)
             }
         }
         else
+        {
+             zprintf1("QTShareDataT creat data fail!\n");
             return -1;
+        }
     }
 
-    this->creatmark = 1;
+    this->m_creatmark = 1;
 
-    this->data = (T*) lhshare.data();
-    this->size = siz;
-    // this->addp = this->data;
+    this->m_data = (T*) lhshare.data();
+    this->m_size = lhshare.size();
+    if(size != this->m_size)
+    {
+        zprintf1("QTShareDataT size %d create size %d!\n", size, this->m_size);
+    }
+
 
     return 0;
 }
@@ -202,26 +212,33 @@ int QTShareDataT< T >::creat_data(int siz)
 template < class T >
 T* QTShareDataT< T >::creat_data(int size, const QString & keyid)
 {
-    shm_key = keyid;
+    m_shmKey = keyid;
     if (creat_data(size) == 0)
-        return this->data;
+        return this->m_data;
     return NULL;
 }
 
 template < class T >
-int QTShareDataT< T >::read_creat_data(int siz, const QString & keyid)
+int QTShareDataT< T >::read_creat_data(int size, const QString & keyid)
 {
-    shm_key = keyid;
+    m_shmKey = keyid;
 
-    lhshare.setKey(shm_key);
+    lhshare.setKey(m_shmKey);
 
     if (!lhshare.attach())
     {
         zprintf1("can't attatch qt share\n");
         return -1;
     }
-    this->data = (T*) lhshare.data();
-    this->size = siz;
+    this->m_data = (T*) lhshare.data();
+    this->m_size = lhshare.size();
+
+    if(size != this->m_size)
+    {
+        zprintf1("QTShareDataT read create size %d create size %d!\n", size, this->m_size);
+    }
+
+
 
     return 0;
 }
@@ -229,20 +246,20 @@ int QTShareDataT< T >::read_creat_data(int siz, const QString & keyid)
 template < class T >
 void QTShareDataT< T >::set_data(uint add, const T & val)
 {
-    if (add >= this->size / sizeof(T))
+    if (add >= this->m_size / sizeof(T))
     {
         zprintf1("set data off\n");
         return;
     }
     lhshare.lock();
-    memcpy(this->data + add, &val, sizeof(T));
+    memcpy(this->m_data + add, &val, sizeof(T));
     lhshare.unlock();
 }
 
 template < class T >
 void QTShareDataT< T >::set_data(T* addr, const T & val)
 {
-    if ((addr - this->data) >= this->size / sizeof(T))
+    if ((addr - this->m_data) >= this->m_size / sizeof(T))
     {
         zprintf1("set data off\n");
         return;
@@ -255,14 +272,14 @@ void QTShareDataT< T >::set_data(T* addr, const T & val)
 template < class T >
 T QTShareDataT< T >::get_data(uint add)
 {
-    if (add >= this->size / sizeof(T))
+    if (add >= this->m_size / sizeof(T))
     {
         printf("get data off\n");
-        return *this->data;
+        return *this->m_data;
     }
     T mid;
     lhshare.lock();
-    mid = *(this->data + add);
+    mid = *(this->m_data + add);
     lhshare.unlock();
     return mid;
 }
@@ -270,10 +287,10 @@ T QTShareDataT< T >::get_data(uint add)
 template < class T >
 T QTShareDataT< T >::get_data(const T * addr)
 {
-    if ((addr - this->data) >= this->size / sizeof(T))
+    if ((addr - this->m_data) >= this->m_size / sizeof(T))
     {
         printf("get data off\n");
-        return *this->data;
+        return *this->m_data;
     }
     T mid;
     lhshare.lock();
@@ -285,21 +302,21 @@ T QTShareDataT< T >::get_data(const T * addr)
 template < class T >
 int QTShareDataT< T >::get_data(uint add, T & val)
 {
-    if (add >= this->size / sizeof(T))
+    if (add >= this->m_size / sizeof(T))
     {
         zprintf1("get data off\n");
         return -1;
     }
 
     lhshare.lock();
-    val = *(this->data + add);
+    val = *(this->m_data + add);
     lhshare.unlock();
     return 0;
 }
 template < class T >
 int QTShareDataT< T >::get_data(const T * addr, T& val)
 {
-    if ((addr - this->data) >= this->size / sizeof(T))
+    if ((addr - this->m_data) >= this->m_size / sizeof(T))
     {
         zprintf1("get data off\n");
         return -1;
@@ -314,36 +331,36 @@ int QTShareDataT< T >::get_data(const T * addr, T& val)
 template < class T >
 void QTShareDataT< T >::noblock_set_data(uint add, T val)
 {
-    if (add >= this->size / sizeof(T))
+    if (add >= this->m_size / sizeof(T))
     {
         zprintf1("set data off\n");
         return;
     }
-    memcpy(this->data + add, &val, sizeof(T));
+    memcpy(this->m_data + add, &val, sizeof(T));
 }
 
 template < class T >
 T QTShareDataT< T >::noblock_get_data(uint add)
 {
-    if (add >= this->size / sizeof(T))
+    if (add >= this->m_size / sizeof(T))
     {
         zprintf1("get data off\n");
-        return *this->data;
+        return *this->m_data;
     }
     T mid;
-    mid = *(this->data + add);
+    mid = *(this->m_data + add);
     return mid;
 }
 
 template < class T >
-int QTShareDataT< T >::noblock_get_data(uint add, T& val)
+int QTShareDataT< T >::noblock_get_data(uint add, T & val)
 {
-    if (add >= this->size / sizeof(T))
+    if (add >= this->m_size / sizeof(T))
     {
         zprintf1("get data off\n");
         return -1;
     }
-    val = *(this->data + add);
+    val = *(this->m_data + add);
     return 0;
 }
 
