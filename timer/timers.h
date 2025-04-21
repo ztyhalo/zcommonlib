@@ -11,8 +11,8 @@
 #define TIMERS_H
 
 #include <map>
-#include "epoll/e_poll.h"
-//#include <QDebug>
+#include "e_poll.h"
+
 
 #define  TIMER_SIZE_MAX           16
 
@@ -24,15 +24,15 @@ public:
     TO   *  slot;
     void *  para;
 
-    int     filed;
+    int     m_filed;
     int  (*t_back)(TimerEvent *);
 public:
     TimerEvent(int  (*callback)(TimerEvent *) = NULL,
            FROM * f = NULL, void * arg = NULL, TO * t = NULL )
     {
-        filed = 0;
-        filed = timerfd_create(CLOCK_REALTIME, 0);
-        if(filed <= 0)
+        m_filed = 0;
+        m_filed = timerfd_create(CLOCK_REALTIME, 0);
+        if(m_filed <= 0)
         {
             zprintf1("TimerEvent create timerfd fail!\n");
             return;
@@ -43,8 +43,13 @@ public:
         para = arg;
     }
 
-    virtual ~TimerEvent(){
-        ;               //此处不能关闭filed，由于Ftimer添加时会析构，从而关闭该文件
+    virtual ~TimerEvent(){    //此处不能关闭filed，由于Ftimer添加时会析构，从而关闭该文件
+        if(m_filed >= 0)
+        {
+            close(m_filed);
+            m_filed = -1;
+        }
+
     }
 
     int timer_start(double timer_internal, bool repeat = true){
@@ -58,7 +63,7 @@ public:
             ptime_internal.it_interval.tv_nsec = ptime_internal.it_value.tv_nsec;
         }
 
-        timerfd_settime(filed, 0, &ptime_internal, NULL);
+        timerfd_settime(m_filed, 0, &ptime_internal, NULL);
         return 0;
     }
 };
@@ -68,36 +73,37 @@ template <class FROM = void, class TO = void>
 class F_Timer:public NCbk_Poll, public MUTEX_CLASS
 {
 public:
-    std::map<int, TimerEvent<FROM, TO> > poll_map;
+    std::map<int, TimerEvent<FROM, TO> *> poll_map;
 public:
     F_Timer(int max = 20):NCbk_Poll(max){
         ;
     }
 
     virtual ~F_Timer(){
-        typename std::map<int, TimerEvent<FROM, TO> >::iterator it;
+        this->running = 0;
+        lock();
+        typename std::map<int, TimerEvent<FROM, TO> *>::iterator it;
         it = poll_map.begin();
         while(it != poll_map.end())
         {
-//            close(it->first);
             delete_event(it->first);
             ++it;
         }
-//        this->pth_class_exit();
+        unlock();
     }
     int add_event(double internal_value,int  (*callback)(TimerEvent<FROM, TO> *) = NULL,
                   FROM * f = NULL,void * arg = NULL,bool rep = true, TO * t = NULL )
     {
         zprintf3("timer is %f!\n", internal_value);
-        TimerEvent<FROM, TO> midt(callback,f ,arg, t);
-        if(midt.filed > 0){
+        TimerEvent<FROM, TO> *pMid = new TimerEvent<FROM, TO>(callback,f ,arg, t);
+        if(pMid->m_filed > 0){
             lock();
-            e_poll_add_lt(midt.filed);
-            poll_map.insert(std::pair<int, TimerEvent<FROM, TO> >(midt.filed, midt));
-            midt.timer_start(internal_value, rep);
+            e_poll_add_lt(pMid->m_filed);
+            poll_map.insert(std::pair<int, TimerEvent<FROM, TO> *>(pMid->m_filed, pMid));
+            pMid->timer_start(internal_value, rep);
             unlock();
         }
-        return midt.filed;
+        return pMid->m_filed;
     }
     int delete_event(int event)
     {
@@ -113,10 +119,10 @@ public:
 
     void run(){
         struct epoll_event events[get_epoll_size()];
-        // char buf[16];
+
         uint64_t exp;
-        // int num;
-        for (;  ; )
+
+        while (this->running)
         {
             memset(&events, 0, sizeof(events));
             int nfds = epoll_wait(epfd, events, get_epoll_size(), 5000);
@@ -127,10 +133,9 @@ public:
             lock();
             for (int i = 0; i < nfds; ++i)
             {
-                typename std::map<int, TimerEvent<FROM, TO> >::iterator itmp = poll_map.find(events[i].data.fd);
+                typename std::map<int, TimerEvent<FROM, TO> *>::iterator itmp = poll_map.find(events[i].data.fd);
                 if (itmp != poll_map.end())
                 {
-                    // if(read(events[i].data.fd, buf,16) > 0)
                     if(read(events[i].data.fd, &exp, sizeof(uint64_t)) ==  sizeof(uint64_t))
                     {
                         itmp->second.t_back(&itmp->second);

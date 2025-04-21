@@ -1,11 +1,8 @@
 #ifndef __SIGSLOT_H__
 #define __SIGSLOT_H__
 
-#include <algorithm>
-#include <iostream>
 #include <vector>
-#include <stdio.h>
-#include <map>
+#include "zprint.h"
 
 using namespace std;
 
@@ -24,13 +21,13 @@ template < class SLOT_OWN, class PARA_TMP >
 class ZSlotImpl : public ZSlotBase< PARA_TMP >
 {
   public:
-    ZSlotImpl(SLOT_OWN* pObj, void (SLOT_OWN::*func)(PARA_TMP))
+    explicit ZSlotImpl(SLOT_OWN* pObj, void (SLOT_OWN::*func)(PARA_TMP))
     {
         m_pObj = pObj;
         m_Func = func;
     }
 
-    void Exec(PARA_TMP param1)
+    void Exec(PARA_TMP param1) override
     {
         (m_pObj->*m_Func)(param1);
     }
@@ -43,16 +40,39 @@ class ZSlotImpl : public ZSlotBase< PARA_TMP >
 template < class PARA_TMP >
 class ZSlot
 {
-  public:
+private:
+    ZSlotBase<PARA_TMP> * m_pSlotBase;
+
+public:
     template < class SLOT_OWN >
+
     ZSlot(SLOT_OWN* pObj, void (SLOT_OWN::*func)(PARA_TMP))
     {
         m_pSlotBase = new ZSlotImpl< SLOT_OWN, PARA_TMP >(pObj, func);
     }
 
-    ~ZSlot()
+    ZSlot(const ZSlot & other)
     {
-        delete m_pSlotBase;
+        this->m_pSlotBase = new ZSlotBase<PARA_TMP>(*other.m_pSlotBase);
+    };
+
+    ZSlot& operator=(const ZSlot& other)
+    {
+        if(this != &other)
+        {
+            delete m_pSlotBase;
+            this->m_pSlotBase = new ZSlotBase<PARA_TMP>(*other.m_pSlotBase);
+        }
+        return *this;
+    }
+    virtual ~ZSlot()
+    {
+        zprintf3("ZSlot destruct!\n");
+        if(m_pSlotBase != 0)
+        {
+            delete m_pSlotBase;
+            m_pSlotBase = 0;
+        }
     }
 
     void Exec(PARA_TMP param1)
@@ -60,22 +80,26 @@ class ZSlot
         m_pSlotBase->Exec(param1);
     }
 
-  private:
-    ZSlotBase< PARA_TMP >* m_pSlotBase;
+
 };
 
 template < class PARA_TMP >
 class ZSignal
 {
-  public:
+
+private:
+    vector< ZSlot< PARA_TMP >* > m_pSlotSet;
+
+public:
     template < class SLOT_OWN >
     void Bind(SLOT_OWN* pObj, void (SLOT_OWN::*func)(PARA_TMP))
     {
         m_pSlotSet.push_back(new ZSlot< PARA_TMP >(pObj, func));
     }
 
-    ~ZSignal()
+    virtual ~ZSignal()
     {
+        zprintf3("ZSignal destruct!\n");
         for (int i = 0; i < (int) m_pSlotSet.size(); i++)
         {
             delete m_pSlotSet[i];
@@ -90,8 +114,7 @@ class ZSignal
         }
     }
 
-  private:
-    vector< ZSlot< PARA_TMP >* > m_pSlotSet;
+
 };
 
 #define P_Connect(sender, signal, receiver, method) ((sender)->signal.Bind(receiver, method))
@@ -101,7 +124,7 @@ class ZSignal
 class No_SlotBase
 {
   public:
-    virtual void Exec(void) = 0;
+    virtual void Exec(void);
     virtual ~No_SlotBase()
     {
     }
@@ -118,7 +141,7 @@ class No_SlotImpl : public No_SlotBase
         m_Func = func;
     }
 
-    void Exec(void)
+    void Exec(void) override
     {
         (m_pObj->*m_Func)();
     }
@@ -136,6 +159,22 @@ class No_Slot
     {
         m_pSlotBase = new No_SlotImpl< SLOT_OWN >(pObj, func);
     }
+
+    No_Slot(const No_Slot & other)
+    {
+        this->m_pSlotBase = new No_SlotBase(*other.m_pSlotBase);
+    }
+
+    No_Slot& operator=(const No_Slot& other)
+    {
+        if(this != &other)
+        {
+            delete m_pSlotBase;
+            this->m_pSlotBase = new No_SlotBase(*other.m_pSlotBase);
+        }
+        return *this;
+    }
+
 
     virtual ~No_Slot()
     {
@@ -164,8 +203,9 @@ class No_Signal
         m_pSlotSet.push_back(new No_Slot(pObj, func));
     }
 
-    ~No_Signal()
+    virtual ~No_Signal()
     {
+        zprintf3("No_Signal destruct!\n");
         for (int i = 0; i < (int) m_pSlotSet.size(); i++)
         {
             delete m_pSlotSet[i];

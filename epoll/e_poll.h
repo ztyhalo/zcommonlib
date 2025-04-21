@@ -21,7 +21,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <errno.h>
-#include "zprint/zprint.h"
+#include "zprint.h"
 
 #define MAXFDS 4
 #define EVENTS 100
@@ -195,7 +195,7 @@ private:
          zprintf3("destory Pth_Class delete over!\n");
      }
 
-     int start(string name ="")
+     int start(const string & name ="")
      {
          if(pid == 0)
          {

@@ -34,6 +34,7 @@ SOURCES += \
     date/com_date.cpp \
     file/zfile.cpp \
     prodata/sem/syssem.cpp \
+    prodata/zlockerclass.cpp \
     prodata/zsystemsem.cpp \
     socket/socket.cpp \
     tcp/tcp_class.cpp \
@@ -56,6 +57,7 @@ HEADERS += \
     prodata/sem/syssem.h \
     prodata/semshare.h \
     prodata/sharemem.h \
+    prodata/zlockerclass.h \
     prodata/zmap.h \
     prodata/zmsg.h \
     prodata/zsystemsem.h \

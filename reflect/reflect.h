@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include <iostream>
+
 #include <string>
 #include <vector>
 #include <assert.h>
@@ -13,7 +13,7 @@
 #include <cstring>
 #include <stddef.h>
 #include <QDomDocument>
-#include <map>
+
 
 using namespace std;
 
@@ -64,27 +64,23 @@ void bit_opc_set(void* turndata, uint8_t bit, uint8_t size, T val)
 struct FieldMetadata
 {
     // 成员变量的名称
-    string name;
+    string m_name;
 
     // 成员变量的类型
-    string type;
+    string m_type;
 
     // 成员变量的地址
-    size_t offset;
+    size_t m_offset;
 
-    uchar stype; //子类型
+    uchar m_stype; //子类型
 
-    uchar bit;
-    uchar bitsize;
+    uchar m_bit;
+    uchar m_bitSize;
 
-    FieldMetadata(string name, string type, size_t offset, uchar st = 0, uchar bt = 0, uchar btsize = 0)
+    FieldMetadata(const string & name, const string & type, size_t offset, uchar stype = 0, uchar bit = 0, uchar btsize = 0):
+        m_name(name),m_type(type),m_offset(offset),m_stype(stype),m_bit(bit),m_bitSize(btsize)
     {
-        this->name    = name;
-        this->type    = type;
-        this->offset  = offset;
-        this->stype   = st;
-        this->bit     = bt;
-        this->bitsize = btsize;
+        ;
     }
 };
 
@@ -99,7 +95,7 @@ struct FieldMetadata
     class Init_I                                                                                                       \
     {                                                                                                                  \
       public:                                                                                                          \
-        Init_I(vector< FieldMetadata >& metas)                                                                         \
+        explicit Init_I(vector< FieldMetadata >& metas)                                                                         \
         {                                                                                                              \
         }                                                                                                              \
     };                                                                                                                 \
@@ -107,7 +103,7 @@ struct FieldMetadata
     class Init_Enum                                                                                                    \
     {                                                                                                                  \
       public:                                                                                                          \
-        Init_Enum(vector< enumpara >& metas)                                                                           \
+        explicit Init_Enum(vector< enumpara >& metas)                                                                           \
         {                                                                                                              \
         }                                                                                                              \
     };
@@ -124,7 +120,7 @@ struct FieldMetadata
     class Init_I< var_index, T >                                                                                       \
     {                                                                                                                  \
       public:                                                                                                          \
-        Init_I(vector< FieldMetadata >& metas)                                                                         \
+        explicit Init_I(vector< FieldMetadata >& metas)                                                                         \
         {                                                                                                              \
             FieldMetadata fmd(#var_name, typeid(var_type).name(), offsetof(this_class, var_name));                     \
             metas.insert(metas.begin(), fmd);                                                                          \
@@ -133,14 +129,13 @@ struct FieldMetadata
 
 struct enumpara
 {
-    uint   node;
-    string name;
-    uint   val;
-    enumpara(uint nd, string na, uint v)
+    uint   m_node;
+    string m_name;
+    uint   m_val;
+    enumpara(uint node, const string & name, uint val):
+        m_node(node),m_name(name),m_val(val)
     {
-        node = nd;
-        name = na;
-        val  = v;
+        ;
     }
 };
 
@@ -149,7 +144,7 @@ struct enumpara
     class Init_Enum< var_index, T >                                                                                    \
     {                                                                                                                  \
       public:                                                                                                          \
-        Init_Enum(vector< enumpara >& metas)                                                                           \
+        explicit Init_Enum(vector< enumpara >& metas)                                                                           \
         {                                                                                                              \
             enumpara mid(var_node, #var_enum, var_value);                                                              \
             metas.insert(metas.begin(), mid);                                                                          \
@@ -168,7 +163,7 @@ struct enumpara
     class Init_I< var_index, T >                                                                                       \
     {                                                                                                                  \
       public:                                                                                                          \
-        Init_I(vector< FieldMetadata >& metas)                                                                         \
+        explicit Init_I(vector< FieldMetadata >& metas)                                                                         \
         {                                                                                                              \
             FieldMetadata fmd(#var_name, typeid(var_type).name(), offsetof(this_class, var_name), sz, bt, btsize);     \
             metas.insert(metas.begin(), fmd);                                                                          \
@@ -184,7 +179,7 @@ struct enumpara
     class Init_I< var_index, T >                                                                                       \
     {                                                                                                                  \
       public:                                                                                                          \
-        Init_I(vector< FieldMetadata >& metas)                                                                         \
+        explicit Init_I(vector< FieldMetadata >& metas)                                                                         \
         {                                                                                                              \
             FieldMetadata fmd(#var_name, typeid(var_type).name(), offsetof(this_class, bit_name), sz, bt, btsize);     \
             metas.insert(metas.begin(), fmd);                                                                          \
@@ -215,7 +210,7 @@ struct enumpara
     class CallInits                                                                                                    \
     {                                                                                                                  \
       public:                                                                                                          \
-        CallInits(vector< FieldMetadata >& metas)                                                                      \
+        explicit CallInits(vector< FieldMetadata >& metas)                                                                      \
         {                                                                                                              \
             Init_I< N >        in(metas);                                                                              \
             CallInits< N - 1 > ci(metas);                                                                              \
@@ -226,7 +221,7 @@ struct enumpara
     class CallInits< 1, T >                                                                                            \
     {                                                                                                                  \
       public:                                                                                                          \
-        CallInits(vector< FieldMetadata >& metas)                                                                      \
+        explicit CallInits(vector< FieldMetadata >& metas)                                                                      \
         {                                                                                                              \
             Init_I< 1 > in(metas);                                                                                     \
         }                                                                                                              \
@@ -248,7 +243,7 @@ struct enumpara
     class EnumInits                                                                                                    \
     {                                                                                                                  \
       public:                                                                                                          \
-        EnumInits(vector< enumpara >& metas)                                                                           \
+        explicit EnumInits(vector< enumpara >& metas)                                                                           \
         {                                                                                                              \
             Init_Enum< N >     in(metas);                                                                              \
             EnumInits< N - 1 > ci(metas);                                                                              \
@@ -259,7 +254,7 @@ struct enumpara
     class EnumInits< 1, T >                                                                                            \
     {                                                                                                                  \
       public:                                                                                                          \
-        EnumInits(vector< enumpara >& metas)                                                                           \
+        explicit EnumInits(vector< enumpara >& metas)                                                                           \
         {                                                                                                              \
             Init_Enum< 1 > in(metas);                                                                                  \
         }                                                                                                              \
@@ -300,7 +295,7 @@ class ParaseToType
     /*
      * 内存值拷贝
      */
-    void CopyValueOnMemory(byte* memvalue, string type, string strvalue)
+    void CopyValueOnMemory(byte* memvalue, const string & type, const string & strvalue)
     {
         int    off   = strvalue.find('=');
         string name  = strvalue.substr(0, off);
@@ -335,7 +330,7 @@ class ParaseToType
     /*
      * 字符串的格式:"a=5;b=6.0f;c=766666666hhhhhgfdd"
      */
-    bool Parase(_T& t, string strvalue)
+    bool Parase(_T& t, const string & strvalue)
     {
         int stroffset = 0;
 
@@ -428,42 +423,42 @@ class ParaseToType
         return true;
     }
     template < typename T >
-    int string_to_data(FieldMetadata m, QString& val, T* add)
+    int string_to_data(const FieldMetadata & m, const QString & val, T * add)
     {
         int err = 0;
         T   va  = 0;
-        if ((m.stype & 0x01) == 0)
+        if ((m.m_stype & 0x01) == 0)
         {
-            if (m.type.compare(typeid(int).name()) == 0)
+            if (m.m_type.compare(typeid(int).name()) == 0)
                 va = val.toInt();
-            else if (m.type.compare(typeid(short).name()) == 0)
+            else if (m.m_type.compare(typeid(short).name()) == 0)
             {
                 va = val.toShort();
             }
-            else if (m.type.compare(typeid(int8_t).name()) == 0)
+            else if (m.m_type.compare(typeid(int8_t).name()) == 0)
             {
                 va = (int8_t) val.toShort();
             }
-            else if (m.type.compare(typeid(uint).name()) == 0)
+            else if (m.m_type.compare(typeid(uint).name()) == 0)
             {
                 va = val.toUInt();
             }
-            else if (m.type.compare(typeid(ushort).name()) == 0)
+            else if (m.m_type.compare(typeid(ushort).name()) == 0)
             {
                 va = val.toUShort();
             }
-            else if (m.type.compare(typeid(char).name()) == 0)
+            else if (m.m_type.compare(typeid(char).name()) == 0)
             {
                 QByteArray ba = val.toLatin1();
                 char*      mm = ba.data();
                 //             const char * midch = val.toStdString().data();
                 va = mm[0];
             }
-            else if (m.type.compare(typeid(uchar).name()) == 0)
+            else if (m.m_type.compare(typeid(uchar).name()) == 0)
             {
                 va = (uchar) val.toUShort();
             }
-            else if (m.type.compare(typeid(double).name()) == 0)
+            else if (m.m_type.compare(typeid(double).name()) == 0)
             {
                 va = val.toDouble();
             }
@@ -480,20 +475,20 @@ class ParaseToType
             va = midv;
         }
 
-        if (m.stype & 0x02)
+        if (m.m_stype & 0x02)
         {
-            bit_opc_set(add, m.bit, m.bitsize, (T) va);
+            bit_opc_set(add, m.m_bit, m.m_bitSize, (T) va);
         }
         else
             memcpy(add, &va, sizeof(T));
         return err;
     }
 
-    int string_to_double(FieldMetadata m, QString& val, double* add)
+    int string_to_double(const FieldMetadata & m, const QString & val, double* add)
     {
         int    err = 0;
         double va  = 0;
-        if ((m.stype & 0x01) == 0)
+        if ((m.m_stype & 0x01) == 0)
         {
             va = val.toDouble();
         }
@@ -504,7 +499,7 @@ class ParaseToType
             va = midv;
         }
 
-        if (m.stype & 0x02)
+        if (m.m_stype & 0x02)
         {
             return -2;
         }
@@ -512,42 +507,42 @@ class ParaseToType
             memcpy(add, &va, sizeof(double));
         return err;
     }
-    int string_data(FieldMetadata m, QString& val, void* add)
+    int string_data(const FieldMetadata & m, const QString & val, void* add)
     {
         int err = 0;
-        if (m.type.compare(typeid(int).name()) == 0)
+        if (m.m_type.compare(typeid(int).name()) == 0)
         {
             string_to_data(m, val, (int*) add);
         }
-        else if (m.type.compare(typeid(short).name()) == 0)
+        else if (m.m_type.compare(typeid(short).name()) == 0)
         {
             string_to_data(m, val, (short*) add);
         }
-        else if (m.type.compare(typeid(int8_t).name()) == 0)
+        else if (m.m_type.compare(typeid(int8_t).name()) == 0)
         {
             string_to_data(m, val, (int8_t*) add);
         }
-        else if (m.type.compare(typeid(uint).name()) == 0)
+        else if (m.m_type.compare(typeid(uint).name()) == 0)
         {
             string_to_data(m, val, (uint*) add);
         }
-        else if (m.type.compare(typeid(ushort).name()) == 0)
+        else if (m.m_type.compare(typeid(ushort).name()) == 0)
         {
             string_to_data(m, val, (ushort*) add);
         }
-        else if (m.type.compare(typeid(uchar).name()) == 0)
+        else if (m.m_type.compare(typeid(uchar).name()) == 0)
         {
             string_to_data(m, val, (uchar*) add);
         }
-        else if (m.type.compare(typeid(char).name()) == 0)
+        else if (m.m_type.compare(typeid(char).name()) == 0)
         {
             string_to_data(m, val, (char*) add);
         }
-        else if (m.type.compare(typeid(double).name()) == 0)
+        else if (m.m_type.compare(typeid(double).name()) == 0)
         {
             string_to_double(m, val, (double*) add);
         }
-        else if (m.type.compare(typeid(string).name()) == 0)
+        else if (m.m_type.compare(typeid(string).name()) == 0)
         {
             string* strmem = (string*) add;
             strmem->append(val.toStdString());
@@ -559,7 +554,7 @@ class ParaseToType
         return err;
     }
 
-    int get_enum_data(string st, uint& val)
+    int get_enum_data(const string & st, uint& val)
     {
         for (auto iter = _T::enuminfo.begin(); iter != _T::enuminfo.end(); iter++)
         {
@@ -571,7 +566,7 @@ class ParaseToType
         }
         return -1;
     }
-    int get_enum_data(uint id, string st, uint& val)
+    int get_enum_data(uint id, const string & st, uint& val)
     {
         for (auto iter = _T::enuminfo.begin(); iter != _T::enuminfo.end(); iter++)
         {
@@ -598,7 +593,7 @@ class ParaseToType
         return size;
     }
 
-    bool read_xml_data(_T& t, string leaguer, QString val)
+    bool read_xml_data(_T & t, const string & leaguer, const QString & val)
     {
         for (auto iter = _T::fieldinfo.begin(); iter != _T::fieldinfo.end(); iter++)
         {
@@ -611,7 +606,7 @@ class ParaseToType
         }
         return TRUE;
     }
-    bool read_xml_data(void* t, string leaguer, QString val)
+    bool read_xml_data(void* t, const string & leaguer, const QString & val)
     {
         for (auto iter = _T::fieldinfo.begin(); iter != _T::fieldinfo.end(); iter++)
         {
@@ -625,7 +620,7 @@ class ParaseToType
         return TRUE;
     }
 
-    bool read_xml_data(_T& t, QDomElement val)
+    bool read_xml_data(_T& t, const QDomElement & val)
     {
         for (auto iter = _T::fieldinfo.begin(); iter != _T::fieldinfo.end(); iter++)
         {
@@ -636,7 +631,7 @@ class ParaseToType
         }
         return TRUE;
     }
-    bool read_xml_data(QDomElement val, void* add, uint size)
+    bool read_xml_data(const QDomElement & val, void* add, uint size)
     {
         _T t;
         for (auto iter = _T::fieldinfo.begin(); iter != _T::fieldinfo.end(); iter++)
@@ -649,7 +644,7 @@ class ParaseToType
         memcpy(add, &t, size);
         return true;
     }
-    bool read_xml_data(void* add, QDomElement val)
+    bool read_xml_data(void* add, const QDomElement & val)
     {
         for (auto iter = _T::fieldinfo.begin(); iter != _T::fieldinfo.end(); iter++)
         {

@@ -16,7 +16,7 @@
 #include <QSharedMemory>
 #include "pro_data.h"
 #include <string.h>
-
+#include "zlockerclass.h"
 using namespace std;
 
 
@@ -153,6 +153,8 @@ class QTShareDataT : public creatdata< T >
     int  noblock_get_data(uint add, T& val);
     void lock_qtshare(void);
     void unlock_qtshare(void);
+    bool lock();
+    bool unlock();
 };
 
 template < class T >
@@ -164,6 +166,17 @@ template < class T >
 void QTShareDataT< T >::unlock_qtshare(void)
 {
     lhshare.unlock();
+}
+
+template < class T >
+bool QTShareDataT< T >::lock(void)
+{
+    return lhshare.lock();
+}
+template < class T >
+bool QTShareDataT< T >::unlock(void)
+{
+    return lhshare.unlock();
 }
 
 template < class T >
@@ -196,6 +209,8 @@ int QTShareDataT< T >::creat_data(int size)
         }
     }
 
+    ZLockerClass<QTShareDataT< T >> locker(this);
+    locker.lock();
     this->m_creatmark = 1;
 
     this->m_data = (T*) lhshare.data();

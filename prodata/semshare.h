@@ -28,11 +28,11 @@ class Sem_Share_Data : public ShareDataT< T >
     int *   m_rd_p;
     int *   m_wr_p;
     int *   m_num_p;
-    key_t   m_sem_key;
+    key_t   m_semKey;
 
   public:
     Sem_Share_Data():m_semid(-1),m_created(0),m_num_p(NULL),
-          m_sem_key(19860610),m_bufsize(0),m_rd_p(NULL),m_wr_p(NULL)
+          m_semKey(19860610),m_bufsize(0),m_rd_p(NULL),m_wr_p(NULL)
     {
         ;
     }
@@ -94,13 +94,18 @@ int Sem_Share_Data< T >::creat_sem_data(uint size, key_t semkey, key_t sharekey)
         *m_rd_p = 0;
         *m_wr_p = 0;
         *m_num_p = 0;
+
         m_semid     = new_create_sem(semkey, 0, m_created);
         if(m_semid <= 0)
         {
             zprintf1("Sem_Share_Data create_sem %d error !\n",semkey);
         }
+        else
+            m_semKey = semkey;
         err = m_semid > 0 ? 0 : -2;
     }
+    else
+        zprintf1("Sem_Share_Data create sharekey %d error !\n",sharekey);
     return err;
 }
 
@@ -110,13 +115,13 @@ int Sem_Share_Data< T >::write_send_data(const T & val)
 
     ZLockerClass<Sem_Share_Data< T >> locker(this);
     locker.lock();
-    uint count = *m_num_p;
+    int count = *m_num_p;
     if(count >= m_bufsize)
     {
         zprintf1("write off \n");
         return -1;
     }
-    uint mid = *m_wr_p;
+    int mid = *m_wr_p;
 
     this->set_data(mid, val);
     mid++;

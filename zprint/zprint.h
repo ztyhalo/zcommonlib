@@ -6,7 +6,7 @@
 #include <time.h>
 #include <string>
 #include <sys/time.h>
-#include "mutex/mutex_class.h"
+#include "mutex_class.h"
 
 using namespace std;
 

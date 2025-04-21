@@ -20,5 +20,6 @@ int del_sem(int sem_id);
 int sem_p(int sem_id);
 int sem_v(int sem_id);
 int sem_p(int sem_id, int milliseconds);
+int get_sem_count(int sem_id);
 
 #endif // SYSSEM_H

@@ -33,11 +33,7 @@ public:
     int tcp_write(void * buf, size_t n);
     int tcp_read(void * buf, size_t n);
     int tcp_recv(void * buf, size_t n);
-//    int udp_send(void * buf, size_t n);
-//    int udp_read_init(void);
-//    int udp_read(void * buf, size_t n);
-//    int udp_read(void * buf, size_t n, struct sockaddr_in * soure);
-//    void bind_port(uint16_t port);
+
 };
 
 #endif // TCP_CLASS_H

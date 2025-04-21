@@ -17,39 +17,10 @@
 #include "pro_data.h"
 #include <string.h>
 #include "zsystemsem.h"
+#include "zlockerclass.h"
 
 using namespace std;
 
-template < class T >
-class ZLockerClass
-{
-
-public:
-    inline ZLockerClass(T *lockClass) : q_sm(lockClass)
-    {
-        if(q_sm == NULL)
-        {
-            zprintf1("zlock class error!\n");
-        }
-    }
-
-    inline ~ZLockerClass()
-    {
-        if (q_sm)
-            q_sm->unlock();
-    }
-
-    inline bool lock()
-    {
-        if (q_sm && q_sm->lock())
-            return true;
-        q_sm = 0;
-        return false;
-    }
-
-private:
-    T *q_sm;
-};
 
 // linux共享内存 不继承线程类
 template < class T >
@@ -63,12 +34,12 @@ public:
     };
   public:
 
-    key_t       m_shm_key;
+    key_t       m_shmKey;
     void *      m_memory;
     ZSystemSem  m_sysSem;
 
   public:
-    ShareDataT():m_shm_key(0),m_memory(0)
+    ShareDataT():m_shmKey(0),m_memory(0)
     {
         ;
     }
@@ -97,7 +68,8 @@ public:
 template < class T >
 int ShareDataT< T >::clean_handle()
 {
-    m_shm_key = 0;
+    m_shmKey = 0;
+    return 0;
 }
 
 template < class T >
@@ -129,10 +101,10 @@ bool ShareDataT< T >::unlock()
 }
 
 template < class T >
-bool ShareDataT< T >::create(int sz)
+bool ShareDataT< T >::create(int size)
 {
     bool ret = true;
-    if(-1 == shmget(m_shm_key, sz, 0600 | IPC_CREAT |IPC_EXCL)) //不存在则创建，存在返回错误eexist
+    if(-1 == shmget(m_shmKey, size, 0600 | IPC_CREAT |IPC_EXCL)) //不存在则创建，存在返回错误eexist
     {
         switch(errno)
         {
@@ -141,7 +113,7 @@ bool ShareDataT< T >::create(int sz)
                 ret = false;
                 break;
             case EEXIST:
-                zprintf2("create shm id %d is have!\n", m_shm_key);
+                zprintf2("create shm id %d is have!\n", m_shmKey);
                 break;
             default:
                 zprintf1("create shm id errno %d!\n", errno);
@@ -153,11 +125,11 @@ bool ShareDataT< T >::create(int sz)
 template < class T >
 bool ShareDataT< T >::attach(AccessMode mode)
 {
-    int   shmid = shmget(m_shm_key, 0, (mode == ReadOnly ? 0400 : 0600));
+    int   shmid = shmget(m_shmKey, 0, (mode == ReadOnly ? 0400 : 0600));
     int   size;
     if(-1 == shmid)
     {
-        zprintf1("ShareDataT m_shm_key %d attach error!\n", m_shm_key);
+        zprintf1("ShareDataT m_shmKey %d attach error!\n", m_shmKey);
         return false;
     }
 
@@ -187,7 +159,8 @@ bool ShareDataT< T >::attach(AccessMode mode)
 template < class T >
 bool ShareDataT< T >::detach()
 {
-    ZLockerClass<ShareDataT<T>> lock(this);
+    ZLockerClass<ShareDataT<T>> locker(this);
+    locker.lock();
     if(-1 == shmdt(m_memory))
     {
         switch(errno)
@@ -204,7 +177,7 @@ bool ShareDataT< T >::detach()
     m_memory = 0;
     this->m_size = 0;
 
-    int id = shmget(m_shm_key, 0, 0400);
+    int id = shmget(m_shmKey, 0, 0400);
     clean_handle();
 
     struct shmid_ds shmid_ds;
@@ -238,23 +211,24 @@ template < class T >
 bool ShareDataT< T >::init_key()
 {
     m_sysSem.setKey(string(), 1);
-    m_sysSem.setKey(std::to_string(m_shm_key), 1);
+    m_sysSem.setKey(std::to_string(m_shmKey), 1);
     return m_sysSem.syssemOk();
 }
 
 template < class T >
 int ShareDataT< T >::creat_data(int size)
 {
-    zprintf2("shm id is %d\n", m_shm_key);
+    zprintf2("shm id is %d\n", m_shmKey);
 
     if(!init_key())
     {
         zprintf1("sharedatat creat data init key err!\n");
         return -1;
     }
-    m_sysSem.setKey(std::to_string(m_shm_key), 1, ZSystemSem::Create);
+    m_sysSem.setKey(std::to_string(m_shmKey), 1, ZSystemSem::Create);
 
-    ZLockerClass<ShareDataT<T>> lock(this);
+    ZLockerClass<ShareDataT<T>> locker(this);
+    locker.lock();
 
     if(!create(size))
         return -2;
@@ -274,7 +248,7 @@ int ShareDataT< T >::creat_data(int size)
 template < class T >
 int ShareDataT< T >::creat_data(int size, key_t id)
 {
-    m_shm_key = id;
+    m_shmKey = id;
     return creat_data(size);
 }
 
@@ -282,15 +256,16 @@ template < class T >
 int ShareDataT< T >::read_creat_data(key_t id, int size)
 {
 
-    ZLockerClass<ShareDataT<T>> lock(this);
+    ZLockerClass<ShareDataT<T>> locker(this);
+    locker.lock();
 
-    if(-1 != m_shm_key)
+    if(0 != m_shmKey)
     {
-        zprintf1("ShareDataT read_creat_data m_shm_key %d is have!\n", m_shm_key);
+        zprintf1("ShareDataT read_creat_data m_shm_key %d is have!\n", m_shmKey);
         return -1;
     }
 
-    m_shm_key = id;
+    m_shmKey = id;
     this->m_size = size;
     if(!attach())
     {

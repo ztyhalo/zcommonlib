@@ -21,118 +21,189 @@ template < class T >
 class Sem_Qt_Data : public QTShareDataT< T >
 {
   public:
-    int         semid;
-    int         bufsize;
+    int         m_semId;
+    int         m_bufSize;
     int         m_num;
-    uint16_t*   rd_buf_p;
-    uint16_t*   wr_buf_p;
-    key_t       sem_key;
+    int         m_created;
+    int     *   m_rd_p;
+    int     *   m_wr_p;
+    int     *   m_size_p;
+    key_t       m_semKey;
 
   public:
-    Sem_Qt_Data():semid(0),bufsize(0),m_num(0),rd_buf_p(NULL),wr_buf_p(NULL),sem_key(19860610)
+    Sem_Qt_Data():m_semId(-1),m_bufSize(0),m_num(0),m_created(0),
+          m_rd_p(NULL),m_wr_p(NULL),m_size_p(NULL),m_semKey(19860610)
     {
         ;
     }
-    explicit Sem_Qt_Data(uint sz, key_t semkey = 19860610, const QString & sharekey = "lhshare")
+    explicit Sem_Qt_Data(int size, key_t semkey = 19860610, const QString & sharekey = "lhshare")
     {
-        creat_sem_data(sz, semkey, sharekey);
+        creat_sem_data(size, semkey, sharekey);
     }
     virtual ~Sem_Qt_Data()
     {
         zprintf3("destory Sem_Qt_Data!\n");
+        cleanHandle();
     }
 
-    int creat_sem_data(uint sz, key_t semkey = 19860610, const QString & sharekey = "lhshare");
+    void cleanHandle()
+    {
+        if(m_created)
+        {
+            if(-1 != m_semId)
+            {
+                if(-1 == semctl(m_semId, 0, IPC_RMID, 0))
+                {
+                    zprintf1("Sem_Qt_Data rm msem %d error!\n", m_semId);
+                }
+                m_semId = -1;
+            }
+            m_created = 0;
+        }
+    }
+
+    int creat_sem_data(int size, key_t semkey = 19860610, const QString & sharekey = "lhshare");
     int write_send_data(const T & val);
     int read_send_data(T& val);
+    int a8_read_send_data(T& val);
     int wait_thread_sem(void);
 };
 
 template < class T >
-int Sem_Qt_Data< T >::creat_sem_data(uint sz, key_t semkey, const QString & sharekey)
+int Sem_Qt_Data< T >::creat_sem_data(int size, key_t semkey, const QString & sharekey)
 {
     int       err     = 0;
-    uint16_t* midp    = NULL;
+    int *     midp    = NULL;
     T*        midaddr = NULL;
 
-    zprintf3("semkey is %d!\n", semkey);
-    midaddr = this->creat_data(sz + sizeof(uint16_t) * 2, sharekey);
-    bufsize = sz / sizeof(T);
+    zprintf2("Sem_Qt_Data create sem semkey is %d!\n", semkey);
+
+    int aline = Z_MEM_ALIGEN_SIZE(size, 4);
+    int alinesize = Z_MEM_ALIGEN_SIZE(aline + sizeof(int) * 3, 4);
+
+    midaddr = this->creat_data(alinesize, sharekey);
+    m_bufSize = size / sizeof(T);
     if (midaddr != NULL)
     {
-        midp      = (uint16_t*) (this->data + bufsize);
-        wr_buf_p  = midp;
-        rd_buf_p  = midp + 1;
-        *rd_buf_p = 0;
-        *wr_buf_p = 0;
-        semid     = create_sem(semkey, 0);
-        if(semid <= 0)
+        ZLockerClass<Sem_Qt_Data< T >> locker(this);
+        locker.lock();
+        midp      = (int *)this->m_data;
+        midp      += aline/4;
+        m_rd_p  = midp;
+        m_wr_p  = midp + 1;
+        m_size_p  = midp + 1;
+        *m_rd_p = 0;
+        *m_wr_p = 0;
+        *m_size_p = 0;
+
+        m_semId     = new_create_sem(semkey, 0, m_created);
+        if(m_semId <= 0)
         {
             zprintf1("Sem_Qt_Data create_sem %d error !\n",semkey);
         }
-        err       = semid > 0 ? 0 : -2;
+        else
+            m_semKey = semkey;
+        err = m_semId > 0 ? 0 : -2;
         m_num = 0;
     }
     else
+    {
+        zprintf1("Sem_Qt_Data create share mem %s error !\n",sharekey.toStdString().c_str());
         err = -1;
+    }
     return err;
 }
 
 template < class T >
 int Sem_Qt_Data< T >::write_send_data(const T & val)
 {
-    this->lock_qtshare();
-
-    if(m_num >= bufsize)
+    ZLockerClass<Sem_Qt_Data< T >> locker(this);
+    locker.lock();
+    int count = *m_size_p;
+    if(count >= m_bufSize)
     {
-        zprintf1("write off \n");
-        this->unlock_qtshare();
+        zprintf1("Sem_Qt_Data write off \n");
         return -1;
     }
-
-    uint16_t mid = *wr_buf_p;
+    int mid = *m_wr_p;
 
     this->noblock_set_data(mid, val);
-    mid++;
 
-    mid %= bufsize;
-    *wr_buf_p = mid;
-    m_num++;
-    this->unlock_qtshare();
-    sem_v(semid);
+    mid++;
+    mid %= m_bufSize;
+    *m_wr_p = mid;
+    count++;
+    *m_size_p = count;
+
+    sem_v(m_semId);
     return 0;
 }
 
 template < class T >
-int Sem_Qt_Data< T >::read_send_data(T& val)
+int Sem_Qt_Data< T >::read_send_data(T & val)
 {
-    this->lock_qtshare();
+    ZLockerClass<Sem_Qt_Data< T >> locker(this);
+    locker.lock();
 
-    if(m_num <= 0)
+    int count = *m_size_p;
+    if(count <= 0)
     {
-        zprintf4("read send data error!\n");
-        this->unlock_qtshare();
+        zprintf3("Sem_Qt_Data read data error!\n");
         return -1;
     }
-
-
-    uint16_t mid = *rd_buf_p;
+    int mid = *m_rd_p;
 
     this->noblock_get_data(mid, val);
 
     mid++;
-    mid %= bufsize;
+    mid %= m_bufSize;
+    *m_rd_p = mid;
+    count--;
+    *m_size_p = count;
 
-    *rd_buf_p = mid;
-    m_num--;
-
-    this->unlock_qtshare();
     return 0;
 }
 template < class T >
+int Sem_Qt_Data< T >::a8_read_send_data(T & val)  //专门为a8系统，没有信号量互斥锁准备的读函数
+{
+    ZLockerClass<Sem_Qt_Data< T >> locker(this);
+    locker.lock();
+
+    int mid = *m_rd_p;
+    int count = * m_size_p;
+    int i = 0;
+    int zs = get_sem_count(m_semId);
+
+    if(count <= 0)
+    {
+        zprintf3("Sem_Qt_Data a8 read data error!\n");
+        return -1;
+    }
+    if(count < (zs + 1))
+    {
+        zprintf3("Sem_Qt_Data a8 count error!\n");
+        return -2;
+    }
+
+    i = count -zs;
+
+    this->noblock_get_data(mid, val);
+
+    mid++;
+    mid %= m_bufSize;
+    *m_rd_p = mid;
+    count--;
+    *m_size_p = count;
+    i--;
+
+    return i;
+
+}
+
+template < class T >
 int Sem_Qt_Data< T >::wait_thread_sem(void)
 {
-    if (sem_p(semid) == 0)
+    if (sem_p(m_semId) == 0)
         return 0;
     else
         return -1;
@@ -150,6 +221,7 @@ class Sem_QtPth_Data : public Sem_Qt_Data< T >, public Call_B_T< T, FAT >
     virtual ~Sem_QtPth_Data()
     {
         zprintf3("destory Sem_QtPth_Data!\n");
+        this->running = 0;
     }
 
     void run();
@@ -158,19 +230,28 @@ class Sem_QtPth_Data : public Sem_Qt_Data< T >, public Call_B_T< T, FAT >
 template < class T, class FAT >
 void Sem_QtPth_Data< T, FAT >::run(void)
 {
-    zprintf4("qt sem run!\n");
+    zprintf3("Sem_QtPth_Data run!\n");
 
     while (this->running)
     {
         if (sem_p(this->semid, 10) == 0)
         {
-            T val;
-            while (this->read_send_data(val) == 0)
+
+            while(this->running)
             {
-                if (this->z_callbak != NULL) //执行操作
+                T   val;
+                int err = this->read_send_data(val);
+                if ( err >= 0)
                 {
-                    this->z_callbak(this->father, val);
+                    if (this->z_callbak != NULL) //执行操作
+                    {
+                        this->z_callbak(this->father, val);
+                    }
+                    if(err == 0)
+                        break;
                 }
+                else
+                    break;
             }
         }
         else

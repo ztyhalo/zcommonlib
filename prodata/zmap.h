@@ -10,6 +10,7 @@
 #include <sys/types.h>
 #include <map>
 #include <string.h>
+#include "zprint.h"
 
 using namespace std;
 
@@ -20,8 +21,14 @@ class Z_Map
     map< KEYTY, DTYPE > zmap;
 
   public:
-    Z_Map(){};
-    virtual ~Z_Map(){};
+    Z_Map()
+    {
+        ;
+    }
+    virtual ~Z_Map()
+    {
+        zprintf3("z_map distruct!\n");
+    }
     DTYPE  get_data(int num);
     DTYPE* get_datap(int num);
     bool   is_have(KEYTY k);
@@ -73,6 +80,14 @@ class Zt_Map : public map< KEYTY, DTYPE >
     } KEY_DATA;
 
   public:
+    Zt_Map()
+    {
+        ;
+    }
+    virtual ~Zt_Map()
+    {
+        zprintf3("Zt_Map distruct!\n");
+    }
     DTYPE& val(KEYTY key);
     DTYPE  get_order_data(int num);
     DTYPE* get_order_datap(int num);

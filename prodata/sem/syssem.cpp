@@ -130,13 +130,7 @@ int sem_p(int sem_id, int milliseconds)
 
     timeout.tv_sec  = (milliseconds / 1000);
     timeout.tv_nsec = (milliseconds - timeout.tv_sec * 1000L) * 1000000L;
-    //    ret = semtimedop(semid, &operation, 1, &timeout);
 
-    //    if (semop(sem_id,&sem_buf,1)==-1) {
-    //        perror("Sem P operation");
-    //        return -1;
-    //    }
-    //    return 0;
     return (semtimedop(sem_id, &sem_buf, 1, &timeout));
 }
 
@@ -153,4 +147,13 @@ int sem_v(int sem_id)
         return -1;
     }
     return 0;
+}
+
+
+int get_sem_count(int sem_id)
+{
+    union semun sem_union;
+
+    return semctl(sem_id,0, GETVAL, sem_union);
+
 }

@@ -48,15 +48,15 @@ class creatdata
         }
     }
 
-    void         data_init(T* add = NULL, int siz = 0);
-    virtual int  creat_data(int sz);
+    void         data_init(T* add = NULL, int size = 0);
+    virtual int  creat_data(int size);
     virtual void set_data(uint add, const T & val);
     virtual T    get_data(uint add);
-    virtual int  get_data(uint add, T& val);
+    virtual int  get_data(uint add, T & val);
 };
 
 template < class T >
-void creatdata< T >::data_init(T* add, int siz)
+void creatdata< T >::data_init(T* add, int size)
 {
     if (m_data != NULL && m_creatmark == 1)
     {
@@ -65,17 +65,17 @@ void creatdata< T >::data_init(T* add, int siz)
         m_creatmark = 0;
     }
     m_data = add;
-    m_size = siz;
+    m_size = size;
 }
 
 template < class T >
-int creatdata< T >::creat_data(int sz)
+int creatdata< T >::creat_data(int size)
 {
-    m_data = new T[sz];
+    m_data = new T[size];
     if (m_data != NULL)
     {
         m_creatmark = 1;
-        m_size = sz * sizeof(T);
+        m_size = size * sizeof(T);
         return 0;
     }
     return -1;
@@ -129,6 +129,7 @@ class Call_B_T : public Pth_Class
     virtual ~Call_B_T()
     {
         zprintf3("destory Call_B_T!\n");
+        this->running = 0;
     }
 
     int (*z_callbak)(F* pro, DTYPE val);

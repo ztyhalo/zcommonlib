@@ -21,37 +21,37 @@ class SemSendClass : public Z_Msg< MSGDATA >
     {
         ;
     }
+    virtual ~SemSendClass()
+    {
+        zprintf3("SemSendClass destruct!\n");
+    }
 };
 
 template < class MSGDATA >
-class SemRevClass : public Z_Msg< MSGDATA >, public MUTEX_CLASS
+class SemRevClass : public Z_Msg< MSGDATA >, public MUTEX_CLASS, public Pth_Class
 {
-  private:
-    Z_PTH< SemRevClass > pth;
 
   public:
     SemRevClass(int key = 0, int type = 1)
     {
-        qDebug() << "SemRevClass1";
         this->msg_init(key, type);
-        //        if(this->get_msg())
-        //        {
-        //            this->delete_object();
-        //        }
-        //                zprintf3("receive sem creat start!\n");
-        qDebug() << "SemRevClass2";
-        this->create_object();
 
-        pth.pthread_init(this, &SemRevClass::pth_exe);
-        qDebug() << "create_object3";
+        if(!this->create_object())
+        {
+            zprintf1("SemRevClass create object fail!\n");
+        }
+
     }
-
+    virtual ~SemRevClass()
+    {
+        zprintf3("SemRevClass destruct!\n");
+    }
     void sem_rec_start(void)
     {
-        pth.start();
+        start("semrevclass");
     }
 
-    void pth_exe(void)
+    void run(void)
     {
         MSGDATA val;
         while (1)
@@ -60,7 +60,6 @@ class SemRevClass : public Z_Msg< MSGDATA >, public MUTEX_CLASS
             {
                 sem_rec_process(val);
             }
-            //            usleep(100);
         }
     }
     virtual void sem_rec_process(MSGDATA val)

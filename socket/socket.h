@@ -8,8 +8,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-//#include <QObject>
-// #include <iostream>
+
 #include "zprint/zprint.h"
 
 using namespace std;

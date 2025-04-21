@@ -103,7 +103,7 @@ class XMLProcess : public ParaseToType< T1 >
         return true;
     }
 
-    bool write_xml_doc(QDomDocument doc, QDomElement root, QString name, T2 t)
+    bool write_xml_doc(QDomDocument doc, QDomElement root, const QString & name, T2 t)
     {
         QDomElement element;
 
@@ -115,7 +115,7 @@ class XMLProcess : public ParaseToType< T1 >
         return true;
     }
 
-    bool write_xml_doc(QDomDocument doc, QDomElement root, QString name, QVector< T2 > val)
+    bool write_xml_doc(QDomDocument & doc, QDomElement & root, const QString & name, const QVector< T2 > & val)
     {
         QDomElement element;
 
