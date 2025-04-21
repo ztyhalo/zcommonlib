@@ -22,25 +22,29 @@
 #include <pthread.h>
 #include <errno.h>
 #include "zprint.h"
-
+#include <vector>
 #define MAXFDS 4
 #define EVENTS 100
 
 class z_poll
 {
 public:
-    explicit z_poll(int max_num= MAXFDS)
+    int m_epFd;
+private:
+    int m_active;
+    const int m_epSize;
+
+public:
+    explicit z_poll(int max_num= MAXFDS):m_epSize(max_num)
     {
-        epfd = epoll_create(max_num);
-        if(epfd == -1)
+        m_epFd = epoll_create(max_num);
+        if(m_epFd == -1)
         {
             zprintf1("epoll creat failed!\n");
-            eposize = 0;
-            active = 0;
+            m_active = 0;
             return;
         }
-        active = 1;
-        eposize = max_num;
+        m_active = 1;
     }
 
     int e_poll_add(int fd)
@@ -52,7 +56,7 @@ public:
         memset(&ev, 0x00, sizeof(struct epoll_event));
         ev.data.fd = fd;
         ev.events = EPOLLIN | EPOLLET;
-        err = epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &ev);
+        err = epoll_ctl(m_epFd, EPOLL_CTL_ADD, fd, &ev);
         if(err == -1)
         {
             zprintf1("%s\n",strerror(errno));
@@ -70,7 +74,7 @@ public:
         memset(&ev, 0x00, sizeof(struct epoll_event));
         ev.data.fd = fd;
         ev.events  = EPOLLIN;
-        err        = epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &ev);
+        err        = epoll_ctl(m_epFd, EPOLL_CTL_ADD, fd, &ev);
         if(err == -1)
         {
             zprintf1("%s\n", strerror(errno));
@@ -84,7 +88,7 @@ public:
         struct epoll_event ev;
         ev.data.fd = fd;
         ev.events = EPOLLIN | EPOLLET;
-        int err = epoll_ctl(epfd, EPOLL_CTL_DEL, fd, &ev);
+        int err = epoll_ctl(m_epFd, EPOLL_CTL_DEL, fd, &ev);
         if(err == -1)
         {
             zprintf1("%s\n",strerror(errno));
@@ -99,7 +103,7 @@ public:
         struct epoll_event ev;
         ev.data.fd = fd;
         ev.events  = EPOLLIN;
-        int err    = epoll_ctl(epfd, EPOLL_CTL_DEL, fd, &ev);
+        int err    = epoll_ctl(m_epFd, EPOLL_CTL_DEL, fd, &ev);
         if(err == -1)
         {
             zprintf1("epoll_ctl error %s\n", strerror(errno));
@@ -111,11 +115,12 @@ public:
 
     int e_poll_deactive()
     {
-        active = 0;
+        m_active = 0;
         return 0;
     }
-     int get_epoll_size(){
-        return eposize;
+    int get_epoll_size() const
+    {
+        return m_epSize;
     }
     bool setNonBlock (int fd)
     {
@@ -132,9 +137,11 @@ public:
 
     int wait_fd_change(int time)
     {
-         struct epoll_event events[get_epoll_size()];
-         memset(&events, 0, sizeof(events));
-         int nfds = epoll_wait(epfd, events, get_epoll_size(), time);
+        // struct epoll_event events[this->get_epoll_size()];
+        std::vector<struct epoll_event> events(m_epSize);
+        // struct epoll_event events[m_epSize];
+        // memset(&events, 0, sizeof(events));
+         int nfds = epoll_wait(m_epFd, events.data(), get_epoll_size(), time);
          if(nfds > 0)
          {
              return nfds;
@@ -146,25 +153,22 @@ public:
     {
         zprintf3("destory zpoll!\n");
 
-        if(active)
+        if(m_active)
         {
 
-            if(epfd)
-                close(epfd);
-            active = 0;
-            epfd = 0;
+            if(m_epFd)
+                close(m_epFd);
+            m_active = 0;
+            m_epFd = 0;
         }
     }
-public:
-    int epfd;
-    int active;
-    int eposize;
+
 };
 
 class Pth_Class
 {
 private:
-    pthread_t pid;
+    pthread_t m_pid;
     string    m_name;
 public:
     int running;
@@ -181,25 +185,25 @@ private:
          return NULL;
      }
  public:
-    explicit Pth_Class():pid(0),m_name(""),running(0){
+    explicit Pth_Class():m_pid(0),m_name(""),running(0){
         ;
      }
      virtual ~Pth_Class(){
-         zprintf3("destory Pth_Class pid %d name %s!\n", (int)pid, m_name.c_str());
-         if(pid > 0){
+         zprintf3("destory Pth_Class pid %d name %s!\n", (int)m_pid, m_name.c_str());
+         if(m_pid > 0){
             running = 0;
-            pthread_cancel(pid);
-            pthread_join(pid, NULL);
-            pid = 0;
+            pthread_cancel(m_pid);
+            pthread_join(m_pid, NULL);
+            m_pid = 0;
          }
          zprintf3("destory Pth_Class delete over!\n");
      }
 
      int start(const string & name ="")
      {
-         if(pid == 0)
+         if(m_pid == 0)
          {
-             if(pthread_create(&pid, NULL, start_thread,this) != 0)
+             if(pthread_create(&m_pid, NULL, start_thread,this) != 0)
              {
                  zprintf1("creat pthread failed!\n");
                  return -1;
@@ -208,25 +212,25 @@ private:
              {
                  running = 1;
                  m_name = name;
-                 zprintf3("zty create pid %d name %s!\n", (int)pid, name.c_str());
+                 zprintf3("zty create pid %d name %s!\n", (int)m_pid, name.c_str());
                  return 0;
              }
          }
-         zprintf1("pid %d have creat\n",(int)pid);
+         zprintf1("pid %d have creat\n",(int)m_pid);
          return -1;
      }
 
      int stop(){
 
-         zprintf3("stop pid %d name %s!\n", (int)pid, m_name.c_str());
-         if(pid > 0)
+         zprintf3("stop pid %d name %s!\n", (int)m_pid, m_name.c_str());
+         if(m_pid > 0)
          {
              running = 0;
-             pthread_cancel(pid);
-             pthread_join(pid, NULL);
-             pid = 0;
+             pthread_cancel(m_pid);
+             pthread_join(m_pid, NULL);
+             m_pid = 0;
          }
-         zprintf3("stop pid %d end!\n",(int)pid);
+         zprintf3("stop pid %d end!\n",(int)m_pid);
          return 0;
      }
 

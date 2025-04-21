@@ -86,7 +86,11 @@ public:
         it = poll_map.begin();
         while(it != poll_map.end())
         {
-            delete_event(it->first);
+            // delete_event(it->first);
+            if(it->first > 0)
+                e_poll_del_lt(it->first);
+            if(it->second != NULL)
+                delete it->second;
             ++it;
         }
         unlock();
@@ -111,8 +115,8 @@ public:
         if(event <= 0) return -1;
         lock();
         err = e_poll_del_lt(event);
-        poll_map.erase(event);
         close(event);
+        poll_map.erase(event);
         unlock();
         return err;
     }
@@ -125,7 +129,7 @@ public:
         while (this->running)
         {
             memset(&events, 0, sizeof(events));
-            int nfds = epoll_wait(epfd, events, get_epoll_size(), 5000);
+            int nfds = epoll_wait(m_epFd, events, get_epoll_size(), 5000);
             if (nfds == 0 || nfds == -1)
             {
                 zprintf1("epoll wait overtime %d\r\n", nfds);
@@ -138,7 +142,7 @@ public:
                 {
                     if(read(events[i].data.fd, &exp, sizeof(uint64_t)) ==  sizeof(uint64_t))
                     {
-                        itmp->second.t_back(&itmp->second);
+                        itmp->second->t_back(itmp->second);
                     }
                 }
             }

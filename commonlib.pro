@@ -74,6 +74,7 @@ HEADERS += \
     zprint/version.h \
     zprint/zprint.h
 
+LIBS += -lssl -lcrypto
 # Default rules for deployment.
 unix {
     target.path = /usr/lib
