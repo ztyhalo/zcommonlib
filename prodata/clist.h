@@ -59,11 +59,11 @@ class C_LIST_T
 
     int    buf_write_data(const DTYPE & val);
     int    buf_write_data(const DTYPE* val);
-    int    compare_fun(const DTYPE& f, const DTYPE& c);
-    int    delete_list_data(const DTYPE& val);
-    int    delete_list_data(const DTYPE* val);
-    int    condition_delete_list_data(int (*condition_fun)(const DTYPE&, const DTYPE&), const DTYPE& val);
-    DTYPE* buf_read_data(int (*condition_fun)(const DTYPE&, const DTYPE&), const DTYPE& val);
+    int    compare_fun( DTYPE& f,  DTYPE& c);
+    int    delete_list_data( DTYPE & val);
+    int    delete_list_data( DTYPE * val);
+    int    condition_delete_list_data(int (*condition_fun)( DTYPE&,  DTYPE&), DTYPE & val);
+    DTYPE* buf_read_data(int (*condition_fun)( DTYPE&,  DTYPE&),  DTYPE &val);
 
     List_N< DTYPE >* get_list_head(void)
     {
@@ -118,13 +118,13 @@ int C_LIST_T< DTYPE, N >::buf_write_data(const DTYPE* val)
     return err;
 }
 template < class DTYPE, int N >
-int C_LIST_T< DTYPE, N >::compare_fun(const DTYPE & f, const DTYPE & c)
+int C_LIST_T< DTYPE, N >::compare_fun( DTYPE & f,  DTYPE & c)
 {
     return f == c ? 0 : -1;
 }
 
 template < class DTYPE, int N >
-int C_LIST_T< DTYPE, N >::condition_delete_list_data(int (*condition_fun)(const DTYPE&, const DTYPE&), const DTYPE& val)
+int C_LIST_T< DTYPE, N >::condition_delete_list_data(int (*condition_fun)( DTYPE&,  DTYPE&),  DTYPE &val)
 {
     if (condition_fun == NULL)
         return -1;
@@ -171,13 +171,13 @@ int C_LIST_T< DTYPE, N >::condition_delete_list_data(int (*condition_fun)(const 
 }
 
 template < class DTYPE, int N >
-int C_LIST_T< DTYPE, N >::delete_list_data(const DTYPE& val)
+int C_LIST_T< DTYPE, N >::delete_list_data(DTYPE &val)
 {
     return condition_delete_list_data(this->compare_fun, val);
 }
 
 template < class DTYPE, int N >
-DTYPE* C_LIST_T< DTYPE, N >::buf_read_data(int (*condition_fun)(const DTYPE&, const DTYPE&), const DTYPE& val)
+DTYPE* C_LIST_T< DTYPE, N >::buf_read_data(int (*condition_fun)( DTYPE&,  DTYPE&),  DTYPE &val)
 {
     if (condition_fun == NULL)
         return NULL;
@@ -201,7 +201,7 @@ DTYPE* C_LIST_T< DTYPE, N >::buf_read_data(int (*condition_fun)(const DTYPE&, co
 }
 
 template < class DTYPE, int N >
-int C_LIST_T< DTYPE, N >::delete_list_data(const DTYPE* val)
+int C_LIST_T< DTYPE, N >::delete_list_data(DTYPE * val)
 {
     List_N< DTYPE >* midpoint = NULL;
     List_N< DTYPE >* copymid  = NULL;

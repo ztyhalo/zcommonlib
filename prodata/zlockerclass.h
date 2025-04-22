@@ -36,4 +36,5 @@ private:
     T *q_sm;
 };
 
+#define ZLockerMutex ZLockerClass<MUTEX_CLASS>
 #endif // ZLOCKERCLASS_H

@@ -648,9 +648,9 @@ class ParaseToType
     {
         for (auto iter = _T::fieldinfo.begin(); iter != _T::fieldinfo.end(); iter++)
         {
-            QString va = val.attribute(QString::fromStdString(iter->name));
+            QString va = val.attribute(QString::fromStdString(iter->m_name));
 
-            void* th = (((byte*) add) + (*iter).offset);
+            void* th = (((byte*) add) + (*iter).m_offset);
             string_data(*iter, va, th);
         }
         return true;

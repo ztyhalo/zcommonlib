@@ -32,9 +32,8 @@ class QT_Share_MemT
     T*      m_data;
 
   public:
-    QT_Share_MemT():m_shmKey("lhshare")
+    QT_Share_MemT():m_shmKey("lhshare"),m_data(NULL)
     {
-        m_data = NULL;
         lhshare.setKey(m_shmKey);
     }
     virtual ~QT_Share_MemT()
@@ -51,6 +50,8 @@ class QT_Share_MemT
     T*   creat_data(int size, const QString & keyid);
     void lock_qtshare(void);
     void unlock_qtshare(void);
+    void set_data(T * addr, T  val);
+
 };
 
 template < class T >
@@ -112,6 +113,15 @@ T* QT_Share_MemT< T >::creat_data(int size, const QString & keyid)
     return NULL;
 }
 
+template <class T>
+void QT_Share_MemT<T>::set_data(T * addr, T  val)
+{
+    if(addr == NULL) return ;
+    lhshare.lock();
+    *addr = val;
+    lhshare.unlock();
+}
+
 // QT共享内存 不继承线程类
 template < class T >
 class QTShareDataT : public creatdata< T >
@@ -143,7 +153,7 @@ class QTShareDataT : public creatdata< T >
     T*   creat_data(int size, const QString & keyid);
     int  read_creat_data(int size, const QString & keyid = "lhshare");
     void set_data(uint add, const T & val)override;
-    void set_data(T* addr, const T & val);
+    void set_data(T* addr,  T  val);
     T    get_data(uint add) override;
     T    get_data(const T* addr);
     int  get_data(uint add, T& val) override;
@@ -272,7 +282,7 @@ void QTShareDataT< T >::set_data(uint add, const T & val)
 }
 
 template < class T >
-void QTShareDataT< T >::set_data(T* addr, const T & val)
+void QTShareDataT< T >::set_data(T* addr,  T  val)
 {
     if ((addr - this->m_data) >= this->m_size / sizeof(T))
     {

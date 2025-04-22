@@ -19,15 +19,16 @@ class DATAS_T
   public:
     PTYPE                           pdata;
     map< uint, creatdata< DTYPE > > devrdinfo;
-
+    DTYPE   *                       m_pAddr;
   public:
-    DATAS_T()
+    DATAS_T():m_pAddr(NULL)
     {
         ;
     }
     virtual ~DATAS_T()
     {
         zprintf3("destory DATAS_T!\n");
+        m_pAddr = NULL;
     }
 
     int add_dev(uint devid, creatdata< DTYPE > in);
@@ -52,7 +53,7 @@ int DATAS_T< PTYPE, DTYPE >::set_dev_invalue(uint devid, uint in, DTYPE val)
 
     if (proiter != devrdinfo.end())
     {
-        pdata.set_data((proiter->second.data - pdata.data) + in, val);
+        pdata.set_data((proiter->second.m_data - pdata.m_data) + in, val);
         return 0;
     }
     zprintf1("set_dev_invalue set devid %d in %d fail!\n", devid, in);
@@ -68,7 +69,7 @@ int DATAS_T< PTYPE, DTYPE >::get_dev_invalue(uint devid, uint in, DTYPE& val)
 
     if (proiter != devrdinfo.end())
     {
-        return pdata.get_data((proiter->second.data - pdata.data) + in, val);
+        return pdata.get_data((proiter->second.m_data - pdata.m_data) + in, val);
     }
     zprintf1("get_dev_invalue set devid %d in %d fail!\n", devid, in);
     return -1;
@@ -78,10 +79,14 @@ template < class PTYPE, class DTYPE >
 int DATAS_T< PTYPE, DTYPE >::add_node_dev(uint devid, uint node)
 {
     creatdata< DTYPE > mid;
+    if(m_pAddr == NULL)
+    {
+        m_pAddr = pdata.m_data;
+    }
 
-    mid.data_init(pdata.addp, node * sizeof(DTYPE));
+    mid.data_init(m_pAddr, node * sizeof(DTYPE));
 
-    pdata.addp += node;
+    m_pAddr += node;
 
     return add_dev(devid, mid);
 }
@@ -123,7 +128,7 @@ DTYPE* DATAS_Map_T< DTYPE >::get_dev_node_addr(uint devid, uint in)
 
     if (proiter != devrdinfo.end())
     {
-        return (proiter->second.data + in);
+        return (proiter->second.m_data + in);
     }
     zprintf1("get_dev_node_addr devid %d in %d fail!\n", devid, in);
     return NULL;
@@ -179,6 +184,102 @@ class SemS_QtDATAS_T : public DATAS_T< Sem_QtPth_Data< DTYPE, FAT >, DTYPE >
     ~SemS_QtDATAS_T()
     {
         zprintf3("destory SemS_QtDATAS_T!\n");
+    }
+};
+
+
+template <class DTYPE>
+class Dev_Map_T
+{
+public:
+    typedef    struct {
+        DTYPE * p;
+        int     sz;
+    }s_info;
+private:
+    char  *                 m_pEnd;
+    char  *                 m_pStart;
+    int                     m_allSize;
+    map<uint,  s_info  >    m_devinfo;
+public:
+    Dev_Map_T():m_pEnd(NULL),m_allSize(0),m_pStart(NULL)
+    {
+        ;
+    }
+    virtual ~Dev_Map_T()
+    {
+        zprintf3("Dev_Map_T destruct!\n");
+    }
+    void dev_map_init(char * s_p)
+    {
+        m_pEnd = s_p;
+        m_pStart = s_p;
+    }
+
+    int add_dev(uint devid,  int size)
+    {
+        if(m_pEnd == NULL)
+        {
+            zprintf1("Add dev failed!\n");
+            return 1;
+        }
+        s_info midval;
+        midval.p = (DTYPE *)m_pEnd;
+        midval.sz = size;
+        m_allSize += size;
+        m_devinfo.insert(pair<uint, s_info>(devid, midval));
+        m_pEnd += size*sizeof(DTYPE);
+        return 0;
+    }
+
+    DTYPE * get_dev_addr(uint devid)
+    {
+        typename map<uint,  s_info >::iterator proiter;
+
+        proiter = m_devinfo.find(devid);
+
+        if(proiter != m_devinfo.end())
+        {
+            return(proiter->second.p);
+        }
+        zprintf1("Dev_Map_T find  %d fail!\n", devid);
+        return NULL;
+    }
+    int  get_dev_size(uint devid)
+    {
+        typename map<uint,  s_info >::iterator proiter;
+
+        proiter = m_devinfo.find(devid);
+
+        if(proiter != m_devinfo.end())
+        {
+            return(proiter->second.sz);
+        }
+        zprintf1("Dev_Map_T find  %d fail!\n", devid);
+        return -1;
+    }
+
+    int  get_dev_info(uint devid, s_info & info)
+    {
+        typename map<uint,  s_info >::iterator proiter;
+
+        proiter = m_devinfo.find(devid);
+
+        if(proiter != m_devinfo.end())
+        {
+            info = proiter->second;
+            return 0;
+        }
+        zprintf3("Dev_Map_T find  %d fail!\n", devid);
+        return 1;
+    }
+
+    s_info  get_info(void)
+    {
+        s_info val;
+        val.p = (DTYPE *)m_pStart;
+        val.sz = m_allSize;
+        return val;
     }
 };
 

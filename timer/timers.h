@@ -42,8 +42,9 @@ public:
         slot = t;
         para = arg;
     }
-
-    virtual ~TimerEvent(){    //此处不能关闭filed，由于Ftimer添加时会析构，从而关闭该文件
+    TimerEvent(const TimerEvent&) = delete;
+    TimerEvent& operator=(const TimerEvent&) = delete;
+    virtual ~TimerEvent(){    //此处不能关闭filed，由于Ftimer添加时会析构，从而关闭该文件 去除重新构造后只能使用指针，可以析构
         if(m_filed >= 0)
         {
             close(m_filed);

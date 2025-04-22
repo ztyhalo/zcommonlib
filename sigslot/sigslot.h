@@ -53,7 +53,8 @@ public:
 
     ZSlot(const ZSlot & other)
     {
-        this->m_pSlotBase = new ZSlotBase<PARA_TMP>(*other.m_pSlotBase);
+        if(other.m_pSlotBase != NULL)
+            this->m_pSlotBase = new ZSlotBase<PARA_TMP>(*other.m_pSlotBase);
     };
 
     ZSlot& operator=(const ZSlot& other)
@@ -162,7 +163,8 @@ class No_Slot
 
     No_Slot(const No_Slot & other)
     {
-        this->m_pSlotBase = new No_SlotBase(*other.m_pSlotBase);
+        if(other.m_pSlotBase != NULL)
+            this->m_pSlotBase = new No_SlotBase(*other.m_pSlotBase);
     }
 
     No_Slot& operator=(const No_Slot& other)
