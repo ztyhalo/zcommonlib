@@ -558,9 +558,9 @@ class ParaseToType
     {
         for (auto iter = _T::enuminfo.begin(); iter != _T::enuminfo.end(); iter++)
         {
-            if (iter->name == st)
+            if (iter->m_name == st)
             {
-                val = iter->val;
+                val = iter->m_val;
                 return 0;
             }
         }
@@ -570,9 +570,9 @@ class ParaseToType
     {
         for (auto iter = _T::enuminfo.begin(); iter != _T::enuminfo.end(); iter++)
         {
-            if (iter->node == id && iter->name == st)
+            if (iter->m_node == id && iter->m_name == st)
             {
-                val = iter->val;
+                val = iter->m_val;
                 return 0;
             }
         }
@@ -584,9 +584,9 @@ class ParaseToType
         int size = 0;
         for (auto iter = _T::enuminfo.begin(); iter != _T::enuminfo.end(); iter++)
         {
-            if (iter->node == id)
+            if (iter->m_node == id)
             {
-                str.push_back(iter->name);
+                str.push_back(iter->m_name);
                 size++;
             }
         }
@@ -597,9 +597,9 @@ class ParaseToType
     {
         for (auto iter = _T::fieldinfo.begin(); iter != _T::fieldinfo.end(); iter++)
         {
-            if (iter->name == leaguer)
+            if (iter->m_name == leaguer)
             {
-                void* th = (((byte*) &t) + (*iter).offset);
+                void* th = (((byte*) &t) + (*iter).m_offset);
 
                 string_data(*iter, val, th);
             }
@@ -610,9 +610,9 @@ class ParaseToType
     {
         for (auto iter = _T::fieldinfo.begin(); iter != _T::fieldinfo.end(); iter++)
         {
-            if (iter->name == leaguer)
+            if (iter->m_name == leaguer)
             {
-                void* th = (((byte*) t) + (*iter).offset);
+                void* th = (((byte*) t) + (*iter).m_offset);
 
                 string_data(*iter, val, th);
             }
@@ -624,9 +624,9 @@ class ParaseToType
     {
         for (auto iter = _T::fieldinfo.begin(); iter != _T::fieldinfo.end(); iter++)
         {
-            QString va = val.attribute(QString::fromStdString(iter->name));
+            QString va = val.attribute(QString::fromStdString(iter->m_name));
 
-            void* th = (((byte*) &t) + (*iter).offset);
+            void* th = (((byte*) &t) + (*iter).m_offset);
             string_data(*iter, va, th);
         }
         return TRUE;
@@ -636,9 +636,9 @@ class ParaseToType
         _T t;
         for (auto iter = _T::fieldinfo.begin(); iter != _T::fieldinfo.end(); iter++)
         {
-            QString va = val.attribute(QString::fromStdString(iter->name));
+            QString va = val.attribute(QString::fromStdString(iter->m_name));
 
-            void* th = (((byte*) &t) + (*iter).offset);
+            void* th = (((byte*) &t) + (*iter).m_offset);
             string_data(*iter, va, th);
         }
         memcpy(add, &t, size);

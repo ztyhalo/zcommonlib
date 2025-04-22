@@ -269,7 +269,10 @@ template < class DTYPE, int N = 2, class F = void >
 class Pth_Buf_T : public Z_Buf_T< DTYPE, N >, public Call_B_T< DTYPE, F >
 {
   public:
-    Pth_Buf_T();
+    Pth_Buf_T()
+    {
+        ;
+    }
     virtual ~Pth_Buf_T()
     {
         zprintf3("Pth_Buf_T delete!\n");

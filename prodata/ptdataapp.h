@@ -202,7 +202,7 @@ private:
     int                     m_allSize;
     map<uint,  s_info  >    m_devinfo;
 public:
-    Dev_Map_T():m_pEnd(NULL),m_allSize(0),m_pStart(NULL)
+    Dev_Map_T():m_pEnd(NULL),m_pStart(NULL),m_allSize(0)
     {
         ;
     }

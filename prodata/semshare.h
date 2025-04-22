@@ -25,14 +25,14 @@ class Sem_Share_Data : public ShareDataT< T >
     int     m_bufsize;
     int     m_created;
 
-    int *   m_rd_p;
-    int *   m_wr_p;
+    int *   m_pRd;
+    int *   m_pWr;
     int *   m_num_p;
     key_t   m_semKey;
 
   public:
     Sem_Share_Data():m_semid(-1),m_created(0),m_num_p(NULL),
-          m_semKey(19860610),m_bufsize(0),m_rd_p(NULL),m_wr_p(NULL)
+          m_semKey(19860610),m_bufsize(0),m_pRd(NULL),m_pWr(NULL)
     {
         ;
     }
@@ -88,11 +88,11 @@ int Sem_Share_Data< T >::creat_sem_data(uint size, key_t semkey, key_t sharekey)
         locker.lock();
         midp = (int*)this->m_memory;
         midp += aline/4;
-        m_rd_p  = midp;
-        m_wr_p  = midp + 1;
+        m_pRd  = midp;
+        m_pWr  = midp + 1;
         m_num_p = midp + 2;
-        *m_rd_p = 0;
-        *m_wr_p = 0;
+        *m_pRd = 0;
+        *m_pWr = 0;
         *m_num_p = 0;
 
         m_semid     = new_create_sem(semkey, 0, m_created);
@@ -121,12 +121,12 @@ int Sem_Share_Data< T >::write_send_data(const T & val)
         zprintf1("write off \n");
         return -1;
     }
-    int mid = *m_wr_p;
+    int mid = *m_pWr;
 
     this->set_data(mid, val);
     mid++;
     mid %= m_bufsize;
-    *m_wr_p = mid;
+    *m_pWr = mid;
     count++;
     *m_num_p = count;
     sem_v(m_semid);
@@ -144,14 +144,14 @@ int Sem_Share_Data< T >::read_send_data(T & val)
         zprintf3("read send data error!\n");
         return -1;
     }
-    int mid = *m_rd_p;
+    int mid = *m_pRd;
 
     this->get_data(mid, val);
 
     mid++;
     mid %= m_bufsize;
 
-    *m_rd_p = mid;
+    *m_pRd = mid;
     count--;
     *m_num_p = count;
 

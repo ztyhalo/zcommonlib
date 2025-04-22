@@ -25,14 +25,14 @@ class Sem_Qt_Data : public QTShareDataT< T >
     int         m_bufSize;
     int         m_num;
     int         m_created;
-    int     *   m_rd_p;
-    int     *   m_wr_p;
-    int     *   m_size_p;
+    int     *   m_pRd;
+    int     *   m_pWr;
+    int     *   m_pSize;
     key_t       m_semKey;
 
   public:
     Sem_Qt_Data():m_semId(-1),m_bufSize(0),m_num(0),m_created(0),
-          m_rd_p(NULL),m_wr_p(NULL),m_size_p(NULL),m_semKey(19860610)
+          m_pRd(NULL),m_pWr(NULL),m_pSize(NULL),m_semKey(19860610)
     {
         ;
     }
@@ -89,12 +89,12 @@ int Sem_Qt_Data< T >::creat_sem_data(int size, key_t semkey, const QString & sha
         locker.lock();
         midp      = (int *)this->m_data;
         midp      += aline/4;
-        m_rd_p  = midp;
-        m_wr_p  = midp + 1;
-        m_size_p  = midp + 1;
-        *m_rd_p = 0;
-        *m_wr_p = 0;
-        *m_size_p = 0;
+        m_pRd  = midp;
+        m_pWr  = midp + 1;
+        m_pSize  = midp + 1;
+        *m_pRd = 0;
+        *m_pWr = 0;
+        *m_pSize = 0;
 
         m_semId     = new_create_sem(semkey, 0, m_created);
         if(m_semId <= 0)
@@ -119,21 +119,21 @@ int Sem_Qt_Data< T >::write_send_data(const T & val)
 {
     ZLockerClass<Sem_Qt_Data< T >> locker(this);
     locker.lock();
-    int count = *m_size_p;
+    int count = *m_pSize;
     if(count >= m_bufSize)
     {
         zprintf1("Sem_Qt_Data write off \n");
         return -1;
     }
-    int mid = *m_wr_p;
+    int mid = *m_pWr;
 
     this->noblock_set_data(mid, val);
 
     mid++;
     mid %= m_bufSize;
-    *m_wr_p = mid;
+    *m_pWr = mid;
     count++;
-    *m_size_p = count;
+    *m_pSize = count;
 
     sem_v(m_semId);
     return 0;
@@ -145,21 +145,21 @@ int Sem_Qt_Data< T >::read_send_data(T & val)
     ZLockerClass<Sem_Qt_Data< T >> locker(this);
     locker.lock();
 
-    int count = *m_size_p;
+    int count = *m_pSize;
     if(count <= 0)
     {
         zprintf3("Sem_Qt_Data read data error!\n");
         return -1;
     }
-    int mid = *m_rd_p;
+    int mid = *m_pRd;
 
     this->noblock_get_data(mid, val);
 
     mid++;
     mid %= m_bufSize;
-    *m_rd_p = mid;
+    *m_pRd = mid;
     count--;
-    *m_size_p = count;
+    *m_pSize = count;
 
     return 0;
 }
@@ -169,8 +169,8 @@ int Sem_Qt_Data< T >::a8_read_send_data(T & val)  //专门为a8系统，没有�
     ZLockerClass<Sem_Qt_Data< T >> locker(this);
     locker.lock();
 
-    int mid = *m_rd_p;
-    int count = * m_size_p;
+    int mid = *m_pRd;
+    int count = * m_pSize;
     int i = 0;
     int zs = get_sem_count(m_semId);
 
@@ -191,9 +191,9 @@ int Sem_Qt_Data< T >::a8_read_send_data(T & val)  //专门为a8系统，没有�
 
     mid++;
     mid %= m_bufSize;
-    *m_rd_p = mid;
+    *m_pRd = mid;
     count--;
-    *m_size_p = count;
+    *m_pSize = count;
     i--;
 
     return i;
@@ -234,7 +234,7 @@ void Sem_QtPth_Data< T, FAT >::run(void)
 
     while (this->running)
     {
-        if (sem_p(this->semid, 10) == 0)
+        if (sem_p(this->m_semId, 10) == 0)
         {
 
             while(this->running)

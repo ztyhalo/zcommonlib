@@ -284,7 +284,7 @@ void QTShareDataT< T >::set_data(uint add, const T & val)
 template < class T >
 void QTShareDataT< T >::set_data(T* addr,  T  val)
 {
-    if ((addr - this->m_data) >= this->m_size / sizeof(T))
+    if ((addr - this->m_data) >= (int)(this->m_size/sizeof(T)))
     {
         zprintf1("set data off\n");
         return;
