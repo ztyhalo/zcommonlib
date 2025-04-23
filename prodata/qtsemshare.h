@@ -23,7 +23,7 @@ class Sem_Qt_Data : public QTShareDataT< T >
   public:
     int         m_semId;
     int         m_bufSize;
-    int         m_num;
+    // int         m_num;
     int         m_created;
     int     *   m_pRd;
     int     *   m_pWr;
@@ -31,7 +31,7 @@ class Sem_Qt_Data : public QTShareDataT< T >
     key_t       m_semKey;
 
   public:
-    Sem_Qt_Data():m_semId(-1),m_bufSize(0),m_num(0),m_created(0),
+    Sem_Qt_Data():m_semId(-1),m_bufSize(0),m_created(0),
           m_pRd(NULL),m_pWr(NULL),m_pSize(NULL),m_semKey(19860610)
     {
         ;
@@ -50,11 +50,13 @@ class Sem_Qt_Data : public QTShareDataT< T >
     {
         if(m_created)
         {
+            zprintf1("sem_qtdata rm msem %d keyid %d!\n", m_semId, m_semKey);
             if(-1 != m_semId)
             {
                 if(-1 == semctl(m_semId, 0, IPC_RMID, 0))
                 {
-                    zprintf1("Sem_Qt_Data rm msem %d error!\n", m_semId);
+                    perror("semctl IPC_RMID failed");
+                    zprintf1("Sem_Qt_Data rm msem %d error code:%d!\n", m_semId, errno);
                 }
                 m_semId = -1;
             }
@@ -104,7 +106,7 @@ int Sem_Qt_Data< T >::creat_sem_data(int size, key_t semkey, const QString & sha
         else
             m_semKey = semkey;
         err = m_semId > 0 ? 0 : -2;
-        m_num = 0;
+        // m_num = 0;
     }
     else
     {

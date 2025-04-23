@@ -74,7 +74,7 @@ int new_create_sem(key_t key, int val, int & createdMark)
             return -1;
         }
     }
-    return 0;
+    return semid;
 }
 
 // 将信号量sem_id设置为init_value

@@ -130,11 +130,17 @@ public:
         while (this->running)
         {
             memset(&events, 0, sizeof(events));
+#if (__GLIBC__ > 2) || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 4)  // glibc ≥ 2.4 的代码逻辑
+            int nfds = epoll_wait(m_epFd, events, get_epoll_size(), -1);
+#else
             int nfds = epoll_wait(m_epFd, events, get_epoll_size(), 5000);
+#endif
+
             if (nfds == 0 || nfds == -1)
             {
                 zprintf1("epoll wait overtime %d\r\n", nfds);
             }
+
             lock();
             for (int i = 0; i < nfds; ++i)
             {

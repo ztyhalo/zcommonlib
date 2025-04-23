@@ -138,9 +138,9 @@ public:
     int wait_fd_change(int time)
     {
         // struct epoll_event events[this->get_epoll_size()];
-        std::vector<struct epoll_event> events(m_epSize);
-        // struct epoll_event events[m_epSize];
         // memset(&events, 0, sizeof(events));
+        std::vector<struct epoll_event> events(m_epSize);
+
          int nfds = epoll_wait(m_epFd, events.data(), get_epoll_size(), time);
          if(nfds > 0)
          {
@@ -175,12 +175,17 @@ public:
 private:
      static void * start_thread(void * arg){
             zprintf3("zty pid start!\n");
+#if (__GLIBC__ > 2) || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 4)  // glibc ≥ 2.4 的代码逻辑
+            zprintf3("glibc version: %d.%d!\n", __GLIBC__, __GLIBC_MINOR__);
+#else
             int res = pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,   NULL);   //设置立即取消
             if (res != 0)
             {
                 perror("Thread pthread_setcancelstate failed");
                 exit(EXIT_FAILURE);
             }
+#endif
+
            static_cast<Pth_Class *>(arg)->run();
          return NULL;
      }

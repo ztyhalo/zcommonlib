@@ -135,7 +135,7 @@ class Call_B_T : public Pth_Class
     int (*z_callbak)(F* pro, DTYPE val);
 
     int set_z_callback(int (*callback)(F* pro, DTYPE), F* arg);
-    int z_pthread_init(int (*callback)(F* pro, DTYPE), F* arg);
+    int z_pthread_init(int (*callback)(F* pro, DTYPE), F* arg, const string & pthName="");
 };
 
 template < class DTYPE, class F >
@@ -156,10 +156,10 @@ int Call_B_T< DTYPE, F >::set_z_callback(int (*callback)(F* pro, DTYPE), F* arg)
 }
 
 template < class DTYPE, class F >
-int Call_B_T< DTYPE, F >::z_pthread_init(int (*callback)(F* pro, DTYPE), F* arg)
+int Call_B_T< DTYPE, F >::z_pthread_init(int (*callback)(F* pro, DTYPE), F* arg, const string & pthName)
 {
     set_z_callback(callback, arg);
-    start();
+    start(pthName);
     return 0;
 }
 //数据buf操作类

@@ -150,7 +150,7 @@ bool ShareDataT< T >::attach(AccessMode mode)
 
     if(size != this->m_size)
     {
-        zprinf1("share data: size %d m_size %d!\n", size, this->m_size);
+        zprintf1("share data: size %d m_size %d!\n", size, this->m_size);
         this->m_size = size;
     }
     return true;
