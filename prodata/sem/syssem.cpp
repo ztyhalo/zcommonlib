@@ -70,7 +70,7 @@ int new_create_sem(key_t key, int val, int & createdMark)
         if (-1 == semctl(semid, 0, SETVAL, init_op))
         {
             zprintf1("init sem %d error!\n", semid);
-            perror("Sem init");
+            perror("new Sem init");
             return -1;
         }
     }
@@ -84,7 +84,7 @@ int init_sem(int sem_id, int init_value)
     sem_union.val = init_value;
     if (semctl(sem_id, 0, SETVAL, sem_union) == -1)
     {
-        perror("Sem init");
+        perror("new Sem init");
         return -1;
     }
     return 0;
@@ -96,7 +96,7 @@ int del_sem(int sem_id)
     union semun sem_union;
     if (semctl(sem_id, 0, IPC_RMID, sem_union) == -1)
     {
-        perror("Sem delete");
+        perror("new Sem delete");
         return -1;
     }
     return 0;
@@ -112,7 +112,7 @@ int sem_p(int sem_id)
 
     if (semop(sem_id, &sem_buf, 1) == -1)
     {
-        perror("Sem P operation");
+        perror("new Sem P operation");
         return -1;
     }
     return 0;
@@ -143,7 +143,7 @@ int sem_v(int sem_id)
     sem_buf.sem_flg = SEM_UNDO;
     if (semop(sem_id, &sem_buf, 1) == -1)
     {
-        perror("Sem V operation");
+        perror("new Sem V operation");
         return -1;
     }
     return 0;

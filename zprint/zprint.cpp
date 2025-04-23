@@ -2,7 +2,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include "zprint.h"
-
+#include "version.h"
 
 
 
@@ -37,11 +37,9 @@ static int hn_open_level_config(const char * file)
     return i;
 }
 
-PRINTF_CLASS::PRINTF_CLASS()
+PRINTF_CLASS::PRINTF_CLASS():pfd(stdout),mark(0),level(PRINT_PRO)
 {
-    pfd = stdout;
-    mark = 0;
-    level = PRINT_PRO;
+    ;
 }
 
 PRINTF_CLASS * PRINTF_CLASS::getInstance(void)
@@ -54,7 +52,7 @@ PRINTF_CLASS * PRINTF_CLASS::getInstance(void)
 }
 
 
-void PRINTF_CLASS::printf_class_init(const string & dir)
+void PRINTF_CLASS::printf_class_init(const string & dir, const string & name)
 {
 
     struct timeval tv;
@@ -71,20 +69,26 @@ void PRINTF_CLASS::printf_class_init(const string & dir)
         {
              if (access(dir.c_str(), F_OK) == 0) // dir exist
              {
-                int val;
-                struct tm *p;
-                gettimeofday(&tv, NULL);
-                p = localtime(&tv.tv_sec);
-                memset(buf, 0x00, sizeof(buf));
-                sprintf(buf,"%02d-%02d_%02d_%02d_%02d.log",
-                       1+p->tm_mon, p->tm_mday,
-                       p->tm_hour, p->tm_min, p->tm_sec);
-                string log = buf;
+                string dirlog;
+                if(name.empty())
+                 {
 
-                string dirlog = dir + log;
+                    struct tm *p;
+                    gettimeofday(&tv, NULL);
+                    p = localtime(&tv.tv_sec);
+                    memset(buf, 0x00, sizeof(buf));
+                    sprintf(buf,"%02d-%02d_%02d_%02d_%02d.log",
+                           1+p->tm_mon, p->tm_mday,
+                           p->tm_hour, p->tm_min, p->tm_sec);
+                    string log = buf;
+
+                    dirlog = dir + log;
+                }
+                else
+                    dirlog = name;
                 string lev    = dir + "level";
 
-                val = hn_open_level_config(lev.c_str());
+                int val = hn_open_level_config(lev.c_str());
                 if(val > 0)
                 {
                     level = val;
@@ -97,7 +101,11 @@ void PRINTF_CLASS::printf_class_init(const string & dir)
                     printf("file %s open fail!\n", dirlog.c_str());
                 }
                 else
+                {
                     mark = 1;
+                    zprintf1("commlib version %d_%d!\n",MAIN_VER, SLAVE_VER);
+
+                }
              }
         }
     }

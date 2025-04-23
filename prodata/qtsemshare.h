@@ -148,7 +148,7 @@ int Sem_Qt_Data< T >::read_send_data(T & val)
     int count = *m_pSize;
     if(count <= 0)
     {
-        zprintf3("Sem_Qt_Data read data error!\n");
+        zprintf4("Sem_Qt_Data read data error!\n");
         return -1;
     }
     int mid = *m_pRd;

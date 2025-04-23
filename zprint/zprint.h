@@ -1,10 +1,12 @@
 #ifndef __ZPRINT_H__
 #define __ZPRINT_H__
+
+#include <string>
 #include <stdio.h>
 #include <unistd.h>
+
 #include <string.h>
 #include <time.h>
-#include <string>
 #include <sys/time.h>
 #include "mutex_class.h"
 
@@ -53,7 +55,7 @@ public:
             printf("close fd!\n");
         }
     }
-    void printf_class_init(const string & dir);
+    void printf_class_init(const string & dir, const string & name="");
     static PRINTF_CLASS * getInstance(void);
     void printf_init(const char * name, int fd);
     void zprintf(const char * format, ...);

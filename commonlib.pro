@@ -2,7 +2,7 @@
 
 TEMPLATE = lib
 # DEFINES += COMMONLIB_LIBRARY
-
+TARGET = zcommonlib
 # CONFIG += c++17
 QT       -= gui
 QT       += core xml network
