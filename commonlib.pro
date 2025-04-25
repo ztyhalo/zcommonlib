@@ -10,6 +10,10 @@ QT       += core xml network
 # In order to do so, uncomment the following line.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 QMAKE_CXXFLAGS += -std=c++11
+TOPDIR = $$PWD/../../public/
+include($$TOPDIR/app.pri)
+
+# DESTDIR = $$QBUILD
 
 INCLUDEPATH = .\
               bufmodel\
@@ -41,6 +45,7 @@ SOURCES += \
     tcp/tcp_client.cpp \
     timer/timers.cpp \
     udp/udp.cpp \
+    zprint/netprint.cpp \
     zprint/zprint.cpp
 
 HEADERS += \
@@ -76,7 +81,4 @@ HEADERS += \
 
 LIBS += -lssl -lcrypto
 # Default rules for deployment.
-unix {
-    target.path = /usr/lib
-}
-!isEmpty(target.path): INSTALLS += target
+DEPENDPATH += $${QBUILD}
