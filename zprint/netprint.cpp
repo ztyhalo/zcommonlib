@@ -66,7 +66,23 @@ Print_Server::Print_Server(quint16 sendp, quint16 recvp):
     sem_init(&psem, 0, 0);
 }
 
+Print_Server::~Print_Server()
+{
+    zprintf3("Print_Server destruct!\n");
+    if(this->running)
+    {
+        constate = 0;
+        this->running = 0;
+        sem_post(&psem);
+        this->waitEnd();
+        if(sem_destroy(&psem) != 0)
+        {
+            zprintf1("Print_Server destruct sem_t error!\n");
+            perror("Z_Buf_T sem_destory");
+        }
+    }
 
+}
 int Print_Server::up_data_process(const QByteArray & data, const QHostAddress & host)
 {
     qDebug() << "data receive!";
@@ -120,31 +136,31 @@ void Print_Server::run()
     struct timeval tv;
     QString        mg;
 
-    while (1) {
+    while (this->running)
+    {
 
-       sem_wait(&(this->psem));
+        sem_wait(&(this->psem));
+        if(this->running == 0)
+           break;
+        lock();
+        QMap<struct Print_Time, QString >::iterator iter = info.begin();
 
-       lock();
-       QMap<struct Print_Time, QString >::iterator iter = info.begin();
-
-      if(iter != info.end())
-      {
-//           struct timeval
+        if(iter != info.end())
+        {
             tv = iter.key().tv;
-//            QString mesg(buf);
             mg = iter.value();
             info.erase(iter);
-      }
-      unlock();
-       struct tm *p;
-      p = localtime(&tv.tv_sec);
-      memset(buf, 0, 1024);
+        }
+        unlock();
+        struct tm *p;
+        p = localtime(&tv.tv_sec);
+        memset(buf, 0, 1024);
 
-      sprintf(buf,"%d-%02d-%02d %02d:%02d:%02d.%06ld ",
+        sprintf(buf,"%d-%02d-%02d %02d:%02d:%02d.%06ld ",
              1900+p->tm_year, 1+p->tm_mon, p->tm_mday,
              p->tm_hour, p->tm_min, p->tm_sec, tv.tv_usec);
-      QString mesg(buf);
-      send_data(mesg + " " + mg);
+        QString mesg(buf);
+        send_data(mesg + " " + mg);
     }
 }
 

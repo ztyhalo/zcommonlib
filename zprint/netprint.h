@@ -68,16 +68,17 @@ struct Print_Time
 };
 
 
-class Print_Server:public UPDATE_SOCKET,public Pth_Class,public MUTEX_CLASS
+class Print_Server:public UPDATE_SOCKET,public MUTEX_CLASS,public Pth_Class
 {
     Q_OBJECT
 public:
-    QHostAddress  printhost;
-    int      constate;
-    QMap<struct Print_Time, QString > info;
-    sem_t                psem;
+    QHostAddress                        printhost;
+    int                                 constate;
+    QMap<struct Print_Time, QString >   info;
+    sem_t                               psem;
 public:
     Print_Server(quint16 sendp = 0xf418, quint16 recvp = 0xf419);
+    ~Print_Server();
     void  netprintf(const char * format, ...);
 signals:
 

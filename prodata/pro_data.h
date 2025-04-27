@@ -168,23 +168,29 @@ template < class DTYPE, int N = 2 >
 class Z_Buf_T:public MUTEX_CLASS
 {
   public:
-    DTYPE           buf[N];
-    uint            sem_wr;
-    uint            sem_rd;
-    sem_t           mgsem;
+    DTYPE           m_buf[N];
+    uint            m_semWr;
+    uint            m_semRd;
+    int             m_size;
+    sem_t           m_mgsem;
     // pthread_mutex_t sem_mut;
 
   public:
-    Z_Buf_T():sem_wr(0),sem_rd(0)
+    Z_Buf_T():m_semWr(0),m_semRd(0),m_size(0)
     {
-        memset(buf, 0x00, sizeof(buf));
-        sem_init(&mgsem, 0, 0);
-        // pthread_mutex_init(&sem_mut, NULL);
+        memset(m_buf, 0x00, sizeof(m_buf));
+        sem_init(&m_mgsem, 0, 0);
     }
     virtual ~Z_Buf_T()
     {
         zprintf3("Z_Buf_T destruct!\n");
-        // pthread_mutex_destroy(&sem_mut);
+
+        int ret = sem_destroy(&m_mgsem);
+        if(ret != 0)
+        {
+            zprintf1("Z_Buf_T destruct sem_t error %d!\n", ret);
+            perror("Z_Buf_T sem_destory");
+        }
     }
 
     void   buf_write_data(const DTYPE & val);
@@ -200,16 +206,17 @@ void Z_Buf_T< DTYPE, N >::buf_write_data(const DTYPE & val)
     // pthread_mutex_lock(&sem_mut);
     ZLockerClass<MUTEX_CLASS> locker(this);
     locker.lock();
-    buf[sem_wr] = val;
-    sem_wr++;
-    sem_wr %= N;
-
-    if (sem_wr == sem_rd)
+    if(m_size >= N)
     {
-        zprintf1("sembuf_t over\n");
+        zprintf1("Z_Buf_T over\n");
+        return;
     }
-    // pthread_mutex_unlock(&sem_mut);
-    sem_post(&mgsem);
+    m_buf[m_semWr] = val;
+    m_semWr++;
+    m_semWr %= N;
+    m_size++;
+
+    sem_post(&m_mgsem);
 }
 
 template < class DTYPE, int N >
@@ -219,15 +226,19 @@ DTYPE* Z_Buf_T< DTYPE, N >::buf_wr_data(const DTYPE &val)
 
     ZLockerClass<MUTEX_CLASS> locker(this);
     locker.lock();
-    buf[sem_wr] = val;
-    ret         = &buf[sem_wr];
-    sem_wr++;
-    sem_wr %= N;
 
-    if (sem_wr == sem_rd)
+    if(m_size >= N)
     {
-        zprintf1("sembuf_t over\n");
+        zprintf1("Z_Buf_T over\n");
+        return ret;
     }
+
+    m_buf[m_semWr] = val;
+    ret         = &m_buf[m_semWr];
+    m_semWr++;
+    m_semWr %= N;
+    m_size++;
+
     return ret;
 }
 
@@ -236,16 +247,19 @@ void Z_Buf_T< DTYPE, N >::buf_write_data(const DTYPE * val)
 {
     ZLockerClass<MUTEX_CLASS> locker(this);
     locker.lock();
-    buf[sem_wr] = *val;
-    sem_wr++;
-    sem_wr %= N;
 
-    if (sem_wr == sem_rd)
+    if(m_size >= N)
     {
-        zprintf1("sembuf_t over\n");
+        zprintf1("Z_Buf_T over\n");
+        return;
     }
-    // pthread_mutex_unlock(&sem_mut);
-    sem_post(&mgsem);
+
+    m_buf[m_semWr] = *val;
+    m_semWr++;
+    m_semWr %= N;
+    m_size++;
+
+    sem_post(&m_mgsem);
 }
 
 template < class DTYPE, int N >
@@ -253,21 +267,20 @@ int Z_Buf_T< DTYPE, N >::buf_read_data(DTYPE& val)
 {
     ZLockerClass<MUTEX_CLASS> locker(this);
     locker.lock();
-    if (sem_rd == sem_wr)
-    {
-        // pthread_mutex_unlock(&sem_mut);
+    if(m_size <= 0)
         return -1;
-    }
-    val = buf[sem_rd];
-    sem_rd++;
-    sem_rd %= N;
-    // pthread_mutex_unlock(&sem_mut);
+
+    val = m_buf[m_semRd];
+    m_semRd++;
+    m_semRd %= N;
+    m_size--;
+
     return 0;
 }
 template < class DTYPE, int N >
 int Z_Buf_T< DTYPE, N >::wait_buf_sem(void)
 {
-    sem_wait(&mgsem);
+    sem_wait(&m_mgsem);
     return 0;
 }
 
@@ -286,7 +299,7 @@ class Pth_Buf_T : public Z_Buf_T< DTYPE, N >, public Call_B_T< DTYPE, F >
         if(this->running)
         {
             this->running = 0;
-            sem_post(&this->mgsem);
+            sem_post(&this->m_mgsem);
             this->waitEnd();
         }
     }

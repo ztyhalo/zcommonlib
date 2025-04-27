@@ -6,7 +6,7 @@
  */
 
 #include "e_poll.h"
-
+#include <vector>
 
 #define MAXFDS 8
 #define EVENTS 100
@@ -137,11 +137,11 @@ bool z_poll::setNonBlock (int fd)
 
 int z_poll::wait_fd_change(int time)
 {
-    struct epoll_event events[this->get_epoll_size()];
-    memset(&events, 0, sizeof(events));
-    // std::vector<struct epoll_event> events(m_epSize);
+    // struct epoll_event events[this->get_epoll_size()];
+    // memset(&events, 0, sizeof(events));
+    std::vector<struct epoll_event> events(m_epSize);
 
-     int nfds = epoll_wait(m_epFd, events, get_epoll_size(), time);
+     int nfds = epoll_wait(m_epFd, events.data(), get_epoll_size(), time);
 
      if(nfds > 0)
      {
