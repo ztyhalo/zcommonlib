@@ -8,7 +8,7 @@
 #include <string.h>
 #include <time.h>
 #include <sys/time.h>
-#include "mutex_class.h"
+// #include "mutex_class.h"
 
 using namespace std;
 
@@ -34,12 +34,13 @@ using namespace std;
            p->tm_hour, p->tm_min, p->tm_sec, tv.tv_usec);\
     printf( __VA_ARGS__);}while(0)
 
-class PRINTF_CLASS:public MUTEX_CLASS
+class PRINTF_CLASS
 {
 private:
-    FILE * pfd;
-    int    mark;
-    int    level;
+    FILE * m_pfd;
+    int    m_mark;
+    int    m_level;
+    pthread_mutex_t m_printMut;
     PRINTF_CLASS();
 
 
@@ -47,14 +48,19 @@ public:
 
     virtual ~PRINTF_CLASS()
     {
-        timemsprintf("destory PRINTF_CLASS!\n");
-        if(pfd != stdout && pfd != NULL)
+        printf("destory PRINTF_CLASS!\n");
+        if(m_pfd != stdout && m_pfd != NULL)
         {
+            int fd = fileno(m_pfd);
+            fflush(m_pfd);
+            fsync(fd);
+            fclose(m_pfd);
+            m_pfd = NULL;
 
-            fclose(pfd);
-            printf("close fd!\n");
         }
     }
+    bool lock();
+    bool unlock();
     void printf_class_init(const string & dir, const string & name="");
     static PRINTF_CLASS * getInstance(void);
     void printf_init(const char * name, int fd);

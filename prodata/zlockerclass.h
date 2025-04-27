@@ -28,6 +28,7 @@ public:
     {
         if (q_sm && q_sm->lock())
             return true;
+        zprintf1("ZLockerClass error!\n");
         q_sm = 0;
         return false;
     }

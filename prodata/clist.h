@@ -15,7 +15,8 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include "zprint/zprint.h"
-
+#include "mutex_class.h"
+#include "zlockerclass.h"
 using namespace std;
 
 template < class DTYPE >
@@ -27,14 +28,14 @@ class List_N
 };
 
 template < class DTYPE, int N = 2 >
-class C_LIST_T
+class C_LIST_T:public MUTEX_CLASS
 {
   public:
     DTYPE            buf[N];
     List_N< DTYPE >  p[N];
     List_N< DTYPE >* rw_P;
     List_N< DTYPE >* free_P;
-    pthread_mutex_t list_mut;
+    // pthread_mutex_t list_mut;
 
   public:
     C_LIST_T()
@@ -49,12 +50,12 @@ class C_LIST_T
         p[N - 1].p    = &buf[N - 1];
         free_P        = p;
         rw_P          = NULL;
-        pthread_mutex_init(&list_mut, NULL);
+        // pthread_mutex_init(&list_mut, NULL);
     }
     virtual ~C_LIST_T()
     {
         zprintf3("C_LIST_T destruct!\n");
-        pthread_mutex_unlock(&list_mut);
+        // pthread_mutex_unlock(&list_mut);
     }
 
     int    buf_write_data(const DTYPE & val);
@@ -77,7 +78,10 @@ int C_LIST_T< DTYPE, N >::buf_write_data(const DTYPE & val)
     List_N< DTYPE >* midpoint = NULL;
     int              err      = 0;
 
-    pthread_mutex_lock(&list_mut);
+    // pthread_mutex_lock(&list_mut);
+    // lock();
+    ZLockerClass<MUTEX_CLASS> locker(this);
+    locker.lock();
     if (free_P != NULL)
     {
         midpoint       = free_P;
@@ -90,7 +94,8 @@ int C_LIST_T< DTYPE, N >::buf_write_data(const DTYPE & val)
     {
         err = -1;
     }
-    pthread_mutex_unlock(&list_mut);
+    // pthread_mutex_unlock(&list_mut);
+    // unlock();
 
     return err;
 }
@@ -101,7 +106,10 @@ int C_LIST_T< DTYPE, N >::buf_write_data(const DTYPE* val)
     List_N< DTYPE >* midpoint = NULL;
     int              err      = 0;
 
-    pthread_mutex_lock(&list_mut);
+    // pthread_mutex_lock(&list_mut);
+    // lock();
+    ZLockerClass<MUTEX_CLASS> locker(this);
+    locker.lock();
     if (free_P != NULL)
     {
         midpoint       = free_P;
@@ -114,7 +122,8 @@ int C_LIST_T< DTYPE, N >::buf_write_data(const DTYPE* val)
     {
         err = -1;
     }
-    pthread_mutex_unlock(&list_mut);
+    // pthread_mutex_unlock(&list_mut);
+    // unlock();
     return err;
 }
 template < class DTYPE, int N >
@@ -133,8 +142,10 @@ int C_LIST_T< DTYPE, N >::condition_delete_list_data(int (*condition_fun)( DTYPE
     List_N< DTYPE >* copymid  = NULL;
     List_N< DTYPE >* retval   = NULL;
 
-    pthread_mutex_lock(&list_mut);
-
+    // pthread_mutex_lock(&list_mut);
+    // lock();
+    ZLockerClass<MUTEX_CLASS> locker(this);
+    locker.lock();
     midpoint = rw_P;
     if (midpoint == NULL)
         err = -3;
@@ -166,7 +177,8 @@ int C_LIST_T< DTYPE, N >::condition_delete_list_data(int (*condition_fun)( DTYPE
     }
     else
         err = -2;
-    pthread_mutex_unlock(&list_mut);
+    // pthread_mutex_unlock(&list_mut);
+    // unlock();
     return err;
 }
 
@@ -186,7 +198,10 @@ DTYPE* C_LIST_T< DTYPE, N >::buf_read_data(int (*condition_fun)( DTYPE&,  DTYPE&
 
     DTYPE* retval = NULL;
 
-    pthread_mutex_lock(&list_mut);
+    // pthread_mutex_lock(&list_mut);
+    // lock();
+    ZLockerClass<MUTEX_CLASS> locker(this);
+    locker.lock();
     midpoint = rw_P;
     while (midpoint != NULL)
     {
@@ -196,7 +211,8 @@ DTYPE* C_LIST_T< DTYPE, N >::buf_read_data(int (*condition_fun)( DTYPE&,  DTYPE&
         }
         midpoint = midpoint->next;
     }
-    pthread_mutex_unlock(&list_mut);
+    // pthread_mutex_unlock(&list_mut);
+    // unlock();
     return retval;
 }
 
@@ -207,7 +223,10 @@ int C_LIST_T< DTYPE, N >::delete_list_data(DTYPE * val)
     List_N< DTYPE >* copymid  = NULL;
     int              err      = 0;
 
-    pthread_mutex_lock(&list_mut);
+    // pthread_mutex_lock(&list_mut);
+    // lock();
+    ZLockerClass<MUTEX_CLASS> locker(this);
+    locker.lock();
     if (val != NULL && rw_P != NULL)
     {
         for (midpoint = rw_P; midpoint != NULL && midpoint->p != val; midpoint = midpoint->next)
@@ -238,8 +257,8 @@ int C_LIST_T< DTYPE, N >::delete_list_data(DTYPE * val)
         err = -1;
         zprintf1("zrw_p is full\n");
     }
-    pthread_mutex_unlock(&list_mut);
-
+    // pthread_mutex_unlock(&list_mut);
+    // unlock();
     return err;
 }
 

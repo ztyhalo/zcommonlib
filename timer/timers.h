@@ -12,7 +12,7 @@
 
 #include <map>
 #include "e_poll.h"
-
+#include "mutex_class.h"
 
 #define  TIMER_SIZE_MAX           16
 
@@ -71,7 +71,7 @@ public:
 
 
 template <class FROM = void, class TO = void>
-class F_Timer:public NCbk_Poll, public MUTEX_CLASS
+class F_Timer:public MUTEX_CLASS,public NCbk_Poll
 {
 public:
     std::map<int, TimerEvent<FROM, TO> *> poll_map;
@@ -81,20 +81,27 @@ public:
     }
 
     virtual ~F_Timer(){
-        this->running = 0;
-        lock();
-        typename std::map<int, TimerEvent<FROM, TO> *>::iterator it;
-        it = poll_map.begin();
-        while(it != poll_map.end())
+        printf("stop F_Timer!\n");
+        if(this->running)
         {
-            // delete_event(it->first);
-            if(it->first > 0)
-                e_poll_del_lt(it->first);
-            if(it->second != NULL)
-                delete it->second;
-            ++it;
+            this->running = 0;
+            lock();
+            typename std::map<int, TimerEvent<FROM, TO> *>::iterator it;
+            it = poll_map.begin();
+            while(it != poll_map.end())
+            {
+                // delete_event(it->first);
+                if(it->first > 0)
+                    e_poll_del_lt(it->first);
+                if(it->second != NULL)
+                    delete it->second;
+                ++it;
+            }
+             unlock();
+            printf("stop poll!\n");
+            stopPoll();
+            this->waitEnd();
         }
-        unlock();
     }
     int add_event(double internal_value,int  (*callback)(TimerEvent<FROM, TO> *) = NULL,
                   FROM * f = NULL,void * arg = NULL,bool rep = true, TO * t = NULL )
@@ -155,6 +162,7 @@ public:
             }
             unlock();
         }
+
     }
 };
 

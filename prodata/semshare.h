@@ -61,6 +61,13 @@ class Sem_Share_Data : public ShareDataT< T >
             m_created = 0;
         }
     }
+
+    void realeseSem()
+    {
+        if(m_semid > 0)
+            sem_v(m_semid);
+    }
+
     int creat_sem_data(uint size, key_t semkey = 19860610, key_t sharekey = 20130410);
     int write_send_data(const T & val);
     int read_send_data(T& val);
@@ -178,7 +185,12 @@ class Sem_Pth_Data : public Sem_Share_Data< T >, public Call_B_T< T, FAT >
     virtual ~Sem_Pth_Data()
     {
         zprintf3("Sem_Pth_Data destruct!\n");
-        this->running = 0;
+        if(this->running)
+        {
+            this->running = 0;
+            this->realeseSem();
+            this->waitEnd();
+        }
     }
     void run();
 };

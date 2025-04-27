@@ -36,9 +36,12 @@ INCLUDEPATH = .\
 SOURCES += \
     bufmodel/ZBufModel.cpp \
     date/com_date.cpp \
+    epoll/e_poll.cpp \
     file/zfile.cpp \
+    mutex/mutex_class.cpp \
     prodata/sem/syssem.cpp \
     prodata/zlockerclass.cpp \
+    prodata/zqtsharemem.cpp \
     prodata/zsystemsem.cpp \
     socket/socket.cpp \
     tcp/tcp_class.cpp \
@@ -65,6 +68,7 @@ HEADERS += \
     prodata/zlockerclass.h \
     prodata/zmap.h \
     prodata/zmsg.h \
+    prodata/zqtsharemem.h \
     prodata/zsystemsem.h \
     reflect/reflect.h \
     reflect/xmlprocess.h \

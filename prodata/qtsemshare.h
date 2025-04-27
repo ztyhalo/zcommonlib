@@ -36,9 +36,10 @@ class Sem_Qt_Data : public QTShareDataT< T >
     {
         ;
     }
-    explicit Sem_Qt_Data(int size, key_t semkey = 19860610, const QString & sharekey = "lhshare")
+    explicit Sem_Qt_Data(int size, key_t semkey = 19860610, const QString & sharekey = "lhshare"):
+        m_semId(-1),m_bufSize(0),m_created(0),m_pRd(NULL),m_pWr(NULL),m_pSize(NULL),m_semKey(19860610)
     {
-        creat_sem_data(size, semkey, sharekey);
+        creat_sem_data(size, semkey, sharekey, ZQTShareMem::Open);
     }
     virtual ~Sem_Qt_Data()
     {
@@ -63,8 +64,13 @@ class Sem_Qt_Data : public QTShareDataT< T >
             m_created = 0;
         }
     }
-
-    int creat_sem_data(int size, key_t semkey = 19860610, const QString & sharekey = "lhshare");
+    void realeseSem()
+    {
+        if(m_semId > 0)
+            sem_v(m_semId);
+    }
+    int creat_sem_data(int size, key_t semkey, const QString & sharekey,
+                       ZQTShareMem::AccessMode mode);
     int write_send_data(const T & val);
     int read_send_data(T& val);
     int a8_read_send_data(T& val);
@@ -72,7 +78,7 @@ class Sem_Qt_Data : public QTShareDataT< T >
 };
 
 template < class T >
-int Sem_Qt_Data< T >::creat_sem_data(int size, key_t semkey, const QString & sharekey)
+int Sem_Qt_Data< T >::creat_sem_data(int size, key_t semkey, const QString & sharekey, ZQTShareMem::AccessMode mode)
 {
     int       err     = 0;
     int *     midp    = NULL;
@@ -83,7 +89,7 @@ int Sem_Qt_Data< T >::creat_sem_data(int size, key_t semkey, const QString & sha
     int aline = Z_MEM_ALIGEN_SIZE(size, 4);
     int alinesize = Z_MEM_ALIGEN_SIZE(aline + sizeof(int) * 3, 4);
 
-    midaddr = this->creat_data(alinesize, sharekey);
+    midaddr = this->creat_data(alinesize, sharekey, mode);
     m_bufSize = size / sizeof(T);
 
     zprintf2("Sem_Qt_Data create m_bufsize %d aline %d alinesize %d!\n", m_bufSize, aline, alinesize);
@@ -109,7 +115,6 @@ int Sem_Qt_Data< T >::creat_sem_data(int size, key_t semkey, const QString & sha
         else
             m_semKey = semkey;
         err = m_semId > 0 ? 0 : -2;
-        // m_num = 0;
     }
     else
     {
@@ -227,6 +232,9 @@ class Sem_QtPth_Data : public Sem_Qt_Data< T >, public Call_B_T< T, FAT >
     {
         zprintf3("destory Sem_QtPth_Data!\n");
         this->running = 0;
+        this->realeseSem();
+        this->waitEnd();
+        zprintf3("Sem_QtPth_Data destruct end!\n");
     }
 
     void run();

@@ -75,7 +75,10 @@ class Z_Msg
         zprintf3("get success!\n");
         return true;
     }
-
+    void releaseMsg()
+    {
+        delete_object();
+    }
     bool create_object(void);
     bool delete_object(void);
     bool send_object(MSGDATA data);
@@ -114,6 +117,7 @@ bool Z_Msg< MSGDATA >::delete_object(void)
 {
     if (msgctl(m_msgId, IPC_RMID, 0) == -1)
         return false;
+    m_msgId = -1;
     return true;
 }
 

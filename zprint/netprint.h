@@ -4,7 +4,7 @@
 #include <QObject>
 #include <QtNetwork>
 #include <QString>
-#include <string>
+// #include <string>
 #include <QByteArray>
 #include <time.h>
 #include <sys/time.h>
@@ -12,7 +12,9 @@
 #include <QHash>
 #include <semaphore.h>
 #include "epoll/e_poll.h"
-#include <string>
+// #include <string>
+#include "mutex_class.h"
+
 using namespace std;
 
 class UPDATE_SOCKET:public QObject
@@ -34,10 +36,13 @@ public:
     UPDATE_SOCKET(quint16 sendp = 0xfff1,
                   quint16 recvp = 0xfff2);
 
-    ~UPDATE_SOCKET()
+    virtual ~UPDATE_SOCKET()
     {
         if(upsocket != NULL)
+        {
             delete upsocket;
+            upsocket = NULL;
+        }
     }
     int send_data(const QString & msg);
     int send_data(const QString & msg, const QString & ip);

@@ -45,6 +45,12 @@ class SemRevClass : public Z_Msg< MSGDATA >, public MUTEX_CLASS, public Pth_Clas
     virtual ~SemRevClass()
     {
         zprintf3("SemRevClass destruct!\n");
+        if(this->running)
+        {
+            this->running = 0;
+            this->releaseMsg();
+            this->waitEnd();
+        }
     }
     void sem_rec_start(void)
     {
@@ -54,7 +60,7 @@ class SemRevClass : public Z_Msg< MSGDATA >, public MUTEX_CLASS, public Pth_Clas
     void run(void)
     {
         MSGDATA val;
-        while (1)
+        while (this->running)
         {
             if (this->receive_object(val, 0) == true) //接收成功
             {
