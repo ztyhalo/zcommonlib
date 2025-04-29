@@ -251,7 +251,8 @@ void Sem_QtPth_Data< T, FAT >::run(void)
     while (this->running)
     {
 #if (__GLIBC__ > 2) || (__GLIBC__ == 2 && __GLIBC_MINOR__ > 18)  // glibc ≥ 2.4 的代码逻辑
-        if (sem_p(this->m_semId) == 0)
+        int ret = sem_p(this->m_semId);
+        if (ret == 0)
         {
 
             while(this->running)
@@ -273,7 +274,8 @@ void Sem_QtPth_Data< T, FAT >::run(void)
         }
         else
         {
-            pthread_testcancel();
+            zprintf1("Sem_QtPth_Data semid error!\n");
+            break;
         }
 #else
         if (sem_p(this->m_semId, 10) == 0)

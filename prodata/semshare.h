@@ -211,6 +211,11 @@ void Sem_Pth_Data< T, FAT >::run(void)
                 }
             }
         }
+        else
+        {
+            zprintf1("Sem_Pth_Data error!\n");
+            break;
+        }
     }
 }
 

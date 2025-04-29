@@ -113,6 +113,11 @@ int sem_p(int sem_id)
     if (semop(sem_id, &sem_buf, 1) == -1)
     {
         perror("new Sem P operation");
+        if(errno == EINVAL || errno == EIDRM)
+        {
+            return -2;
+        }
+
         return -1;
     }
     return 0;
