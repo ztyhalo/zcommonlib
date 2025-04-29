@@ -32,7 +32,7 @@ public:
     int buf_basewrite_data(DTYPE * val, int num, SUPPLEM para);
     int buf_write_data(DTYPE * val, int num, SUPPLEM para);
     int buf_write_data_from_file(FILE * fp, int num, SUPPLEM para);
-    int get_buf_data(DTYPE ** addr, SUPPLEM * para);
+    int get_buf_data(DTYPE & addr, SUPPLEM * para);
     int add_buf_rd(void);
 
 };
@@ -123,14 +123,14 @@ WRITEEND:
 }
 
 template<class DTYPE, class SUPPLEM, int N, int SIZE>
-int ZBufModel<DTYPE,SUPPLEM,N,SIZE>::get_buf_data(DTYPE ** addr, SUPPLEM * para)
+int ZBufModel<DTYPE,SUPPLEM,N,SIZE>::get_buf_data(DTYPE & addr, SUPPLEM * para)
 {
     int size = 0;
 
     lock();
     if(m_num > 0)
     {
-        *addr = m_buf[m_rd];
+        addr = m_buf[m_rd];
         size = m_size[m_rd];
         *para = m_supm[m_rd];
     }

@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "zprint.h"
+#include <memory.h>
 
 using namespace std;
 
@@ -13,7 +14,7 @@ class ZSlotBase
 {
   public:
     virtual void Exec(PARA_TMP param1) = 0;
-    virtual ~ZSlotBase()               = 0;
+    virtual ~ZSlotBase()               = default;
 };
 // SLOT_OWN 操函数的拥有者
 
@@ -61,8 +62,10 @@ public:
     {
         if(this != &other)
         {
-            delete m_pSlotBase;
-            this->m_pSlotBase = new ZSlotBase<PARA_TMP>(*other.m_pSlotBase);
+            ZSlotBase<PARA_TMP> * temp = new ZSlotBase<PARA_TMP>(*other.m_pSlotBase);
+            std::swap(m_pSlotBase, temp);
+            // delete m_pSlotBase;
+            // this->m_pSlotBase = new ZSlotBase<PARA_TMP>(*other.m_pSlotBase);
         }
         return *this;
     }
@@ -171,8 +174,10 @@ class No_Slot
     {
         if(this != &other)
         {
-            delete m_pSlotBase;
-            this->m_pSlotBase = new No_SlotBase(*other.m_pSlotBase);
+            No_SlotBase * temp = new No_SlotBase(*other.m_pSlotBase);
+            std::swap(m_pSlotBase, temp);
+            // delete m_pSlotBase;
+            // this->m_pSlotBase = new No_SlotBase(*other.m_pSlotBase);
         }
         return *this;
     }

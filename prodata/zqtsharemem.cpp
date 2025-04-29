@@ -16,20 +16,11 @@ bool ZQTShareMem::destory(void)
     int id = shmget(unix_key, 0, 0400);
 
     zprintf1("get unix_key %d id %d!\n", unix_key, id);
-
-    struct shmid_ds shmid_ds;
-    if (0 != shmctl(id, IPC_STAT, &shmid_ds)) {
-        switch (errno) {
-        case EINVAL:
-            return true;
-        default:
-            return false;
-        }
-    }
-    if (shmid_ds.shm_nattch == 0) {
-        // mark for removal
-        if (-1 == shmctl(id, IPC_RMID, &shmid_ds)) {
-            zprintf1("remove error %d!\n", errno);
+    if(id > 0)
+    {
+        struct shmid_ds shmid_ds;
+        if (0 != shmctl(id, IPC_STAT, &shmid_ds))
+        {
             switch (errno) {
             case EINVAL:
                 return true;
@@ -37,11 +28,26 @@ bool ZQTShareMem::destory(void)
                 return false;
             }
         }
+        if (shmid_ds.shm_nattch == 0)
+        {
+            // mark for removal
+            if (-1 == shmctl(id, IPC_RMID, &shmid_ds)) {
+                zprintf1("remove error %d!\n", errno);
+                switch (errno) {
+                case EINVAL:
+                    return true;
+                default:
+                    return false;
+                }
+            }
 
-        // remove file
-        if (!remove(m_lhshare.nativeKey().toStdString().c_str()))
-            return false;
+
+        }
     }
+    // remove file
+    if (!remove(m_lhshare.nativeKey().toStdString().c_str()))
+        return false;
+
     return true;
 }
 

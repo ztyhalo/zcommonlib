@@ -62,9 +62,9 @@ class SOCKET_FD_CLASS
 public:
      int                socket_fd;
 public:
-     SOCKET_FD_CLASS()
+     SOCKET_FD_CLASS():socket_fd(-1)
      {
-         socket_fd = 0;
+         ;
      }
      virtual ~SOCKET_FD_CLASS()
      {
@@ -72,7 +72,7 @@ public:
          if(socket_fd > 0)
          {
              close(socket_fd);
-             socket_fd = 0;
+             socket_fd = -1;
          }
      }
      int creat_socket_fd(int type)
@@ -87,10 +87,17 @@ public:
      }
      void close_fd(void)
      {
-         if(socket_fd > 0){
-             shutdown(socket_fd, SHUT_WR);
-             close(socket_fd);
-             socket_fd = 0;
+         if(socket_fd > 0)
+         {
+             if(shutdown(socket_fd, SHUT_WR) == -1)
+             {
+                 perror("shutdown");
+             }
+             if(close(socket_fd) == -1)
+             {
+                 perror("close");
+             }
+             socket_fd = -1;
          }
      }
      int get_sock_point(void)

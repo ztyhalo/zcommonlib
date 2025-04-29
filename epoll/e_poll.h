@@ -23,7 +23,7 @@
 // #include <errno.h>
 #include "zprint.h"
 // #include <vector>
-
+#include <atomic>
 
 #define MAXFDS 8
 #define EVENTS 100
@@ -61,7 +61,7 @@ private:
     pthread_t m_pid;
     string    m_name;
 public:
-    int running;
+    std::atomic<int> running;
 private:
     static void * start_thread(void * arg);
 

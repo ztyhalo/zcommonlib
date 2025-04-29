@@ -15,6 +15,7 @@ UPDATE_SOCKET::UPDATE_SOCKET(quint16 sendp , quint16 recvp)
     if(upsocket == NULL)
     {
         qDebug("update socket create failed!");
+        return;
     }
 
     qDebug("bind 0x%x %d", uprecport, upsocket->bind(uprecport, QUdpSocket::ShareAddress));
@@ -117,7 +118,7 @@ void  Print_Server::netprintf(const char * format, ...)
 
     char buf[1024];
     memset(buf, 0, 1024);
-    (void) vsprintf(buf, format, args);
+    (void) vsnprintf(buf, sizeof(buf),format, args);
     va_end(args);
     QString mesg(buf);
     lock();
@@ -152,13 +153,19 @@ void Print_Server::run()
             info.erase(iter);
         }
         unlock();
-        struct tm *p;
-        p = localtime(&tv.tv_sec);
-        memset(buf, 0, 1024);
+         memset(buf, 0, 1024);
+        struct tm info;
+        if(localtime_r(&tv.tv_sec, &info) == NULL)
+        {
+             perror("localtime_r failed");
+        }
+        else
+        {
+            sprintf(buf,"%d-%02d-%02d %02d:%02d:%02d.%06ld ",
+                 1900+info.tm_year, 1+info.tm_mon, info.tm_mday,
+                 info.tm_hour, info.tm_min, info.tm_sec, tv.tv_usec);
 
-        sprintf(buf,"%d-%02d-%02d %02d:%02d:%02d.%06ld ",
-             1900+p->tm_year, 1+p->tm_mon, p->tm_mday,
-             p->tm_hour, p->tm_min, p->tm_sec, tv.tv_usec);
+        }
         QString mesg(buf);
         send_data(mesg + " " + mg);
     }
