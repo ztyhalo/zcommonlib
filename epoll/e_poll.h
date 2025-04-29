@@ -83,7 +83,7 @@ private:
 };
 
 
-class NCbk_Poll:public Pth_Class,public z_poll
+class NCbk_Poll:public z_poll,public Pth_Class
 {
 public:
      explicit NCbk_Poll(int max):z_poll(max){

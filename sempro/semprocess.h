@@ -10,6 +10,7 @@
 
 #include "zmsg.h"
 #include "e_poll.h"
+#include "mutex_class.h"
 
 using namespace std;
 

@@ -7,6 +7,7 @@
 
 #include "e_poll.h"
 #include <vector>
+#include <sys/prctl.h>
 
 #define MAXFDS 8
 #define EVENTS 100
@@ -200,7 +201,8 @@ void *Pth_Class::start_thread(void * arg)
         exit(EXIT_FAILURE);
     }
 #endif
-
+    string name = static_cast<Pth_Class *>(arg)->m_name.substr(0, 15);
+    prctl(PR_SET_NAME, name.c_str(), 0, 0, 0);
     static_cast<Pth_Class *>(arg)->run();
     pthread_exit(NULL);
     return NULL;

@@ -46,18 +46,28 @@ private:
 
 public:
 
-    virtual ~PRINTF_CLASS()
+    ~PRINTF_CLASS()
     {
         printf("destory PRINTF_CLASS!\n");
         if(m_pfd != stdout && m_pfd != NULL)
         {
-            int fd = fileno(m_pfd);
             fflush(m_pfd);
-            fsync(fd);
+            // int fd = fileno(m_pfd);
+
+            // fsync(fd);
             fclose(m_pfd);
             m_pfd = NULL;
-
+            int ret = pthread_mutex_destroy(&m_printMut);
+            if (ret != 0) {
+                // 错误处理
+                if (ret == EBUSY) {
+                    printf("mutex busy!");
+                } else if (ret == EINVAL) {
+                    printf("mutex invalid!\n");
+                }
+            }
         }
+        printf("PRINTF_CLASS destruct end!\n");
     }
     bool lock();
     bool unlock();

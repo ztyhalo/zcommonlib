@@ -82,6 +82,17 @@ int ZQTShareMem::newcreateData(int size)
             return -3;
         }
     }
+    if(m_lhshare.isAttached())
+    {
+        zprintf2("qt create share have attach ok!\n");
+    }
+    else if (!m_lhshare.attach())
+    {
+        zprintf1("ZQTShareMem can't attatch qt share\n", m_shmKey.toStdString().c_str());
+        return -4;
+    }
+
+
     m_createShm = true;
 
 
@@ -136,11 +147,13 @@ int ZQTShareMem::size() const
 
 bool ZQTShareMem::lock(void)
 {
+    m_mutex.lock();
     return m_lhshare.lock();
 }
 bool ZQTShareMem::unlock(void)
 {
-    return m_lhshare.unlock();
+    m_lhshare.unlock();
+    return m_mutex.unlock();
 }
 
 void *ZQTShareMem::data()

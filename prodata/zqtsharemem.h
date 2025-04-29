@@ -5,6 +5,8 @@
 #include <QString>
 #include <QSharedMemory>
 #include "zprint.h"
+#include "mutex_class.h"
+
 using namespace std;
 
 class ZQTShareMem
@@ -19,6 +21,7 @@ public:
     QSharedMemory m_lhshare;
     QString       m_shmKey;
     bool          m_createShm;
+    MUTEX_CLASS   m_mutex;
 
 public:
     ZQTShareMem():m_shmKey(""),m_createShm(false)

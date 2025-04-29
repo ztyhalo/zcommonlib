@@ -7,7 +7,7 @@
 
 class MUTEX_CLASS
 {
-public:
+private:
     pthread_mutex_t   mut;
 public:
     MUTEX_CLASS();

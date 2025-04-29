@@ -231,9 +231,12 @@ class Sem_QtPth_Data : public Sem_Qt_Data< T >, public Call_B_T< T, FAT >
     virtual ~Sem_QtPth_Data()
     {
         zprintf3("destory Sem_QtPth_Data!\n");
-        this->running = 0;
-        this->realeseSem();
-        this->waitEnd();
+        if(this->running)
+        {
+            this->running = 0;
+            this->realeseSem();
+            this->waitEnd();
+        }
         zprintf3("Sem_QtPth_Data destruct end!\n");
     }
 
@@ -299,7 +302,6 @@ void Sem_QtPth_Data< T, FAT >::run(void)
         }
 #endif
     }
-    pthread_exit(NULL);
 }
 
 #endif /*__SEMSHARE_H__*/

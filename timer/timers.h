@@ -81,7 +81,7 @@ public:
     }
 
     virtual ~F_Timer(){
-        printf("stop F_Timer!\n");
+
         if(this->running)
         {
             this->running = 0;
@@ -97,8 +97,7 @@ public:
                     delete it->second;
                 ++it;
             }
-             unlock();
-            printf("stop poll!\n");
+            unlock();
             stopPoll();
             this->waitEnd();
         }
