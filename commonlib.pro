@@ -39,6 +39,7 @@ SOURCES += \
     epoll/e_poll.cpp \
     file/zfile.cpp \
     mutex/mutex_class.cpp \
+    prodata/lsystemsem.cpp \
     prodata/sem/syssem.cpp \
     prodata/zlockerclass.cpp \
     prodata/zqtsharemem.cpp \
@@ -58,6 +59,7 @@ HEADERS += \
     file/zfile.h \
     mutex/mutex_class.h \
     prodata/clist.h \
+    prodata/lsystemsem.h \
     prodata/pro_data.h \
     prodata/ptdataapp.h \
     prodata/qtsemshare.h \
