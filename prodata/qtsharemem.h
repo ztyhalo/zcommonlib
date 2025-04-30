@@ -87,11 +87,15 @@ void QT_Share_MemT<T>::set_data(T * addr, T  val)
 
 // QT共享内存 不继承线程类
 template < class T >
-class QTShareDataT :public ZQTShareMem,public creatdata< T >
+class QTShareDataT :public ZQTShareMem
 {
-
+public:
+    T*      m_data;
+    int     m_size;      //表示为sizeof(T)*num;
+private:
+    int     m_classSize;
   public:
-    QTShareDataT()
+    QTShareDataT():m_data(NULL),m_size(0),m_classSize(0)
     {
         ;
     }
@@ -100,18 +104,18 @@ class QTShareDataT :public ZQTShareMem,public creatdata< T >
         zprintf3("QTShareDataT destruct!\n");
     }
 
-    int  creat_data(int size) override;
+    int  creat_data(int size);
     T*   creat_data(int size, const QString & keyid, AccessMode mode);
     int  read_creat_data(int size, const QString & keyid = "lhshare");
-    void set_data(uint add, const T & val)override;
+    void set_data(int add, const T & val) ;
     void set_data(T* addr,  T  val);
-    T    get_data(uint add) override;
+    T    get_data(int add) ;
     T    get_data(const T* addr);
-    int  get_data(uint add, T& val) override;
+    int  get_data(int add, T& val);
     int  get_data(const T* addr, T& val);
-    void noblock_set_data(uint add, T val);
-    T    noblock_get_data(uint add);
-    int  noblock_get_data(uint add, T& val);
+    void noblock_set_data(int add, T val);
+    T    noblock_get_data(int add);
+    int  noblock_get_data(int add, T& val);
     void lock_qtshare(void);
     void unlock_qtshare(void);
 };
@@ -143,6 +147,7 @@ int QTShareDataT< T >::creat_data(int size)
         {
             zprintf1("QTShareDataT size %d create size %d!\n", size, this->m_size);
         }
+        m_classSize = (int)(this->m_size / sizeof(T));
     }
     else
         zprintf1("QTShareDataT create size error!\n");
@@ -170,6 +175,7 @@ T* QTShareDataT< T >::creat_data(int size, const QString & keyid, AccessMode mod
         {
             zprintf1("QTShareDataT size %d create size %d!\n", size, this->m_size);
         }
+        m_classSize = (int)(this->m_size / sizeof(T));
 
     }
     return this->m_data;
@@ -191,6 +197,7 @@ int QTShareDataT< T >::read_creat_data(int size, const QString & keyid)
             zprintf1("QTShareDataT read create size %d create size %d!\n", size, this->m_size);
             return -1;
         }
+        m_classSize = (int)(this->m_size / sizeof(T));
         return 0;
     }
     else
@@ -202,9 +209,9 @@ int QTShareDataT< T >::read_creat_data(int size, const QString & keyid)
 }
 
 template < class T >
-void QTShareDataT< T >::set_data(uint add, const T & val)
+void QTShareDataT< T >::set_data(int add, const T & val)
 {
-    if (add >= this->m_size / sizeof(T))
+    if (add >= m_classSize)
     {
         zprintf1("set data off\n");
         return;
@@ -217,7 +224,7 @@ void QTShareDataT< T >::set_data(uint add, const T & val)
 template < class T >
 void QTShareDataT< T >::set_data(T* addr,  T  val)
 {
-    if ((addr - this->m_data) >= (int)(this->m_size/sizeof(T)))
+    if ((addr - this->m_data) >= m_classSize)
     {
         zprintf1("set data off\n");
         return;
@@ -228,7 +235,7 @@ void QTShareDataT< T >::set_data(T* addr,  T  val)
 }
 
 template < class T >
-T QTShareDataT< T >::get_data(uint add)
+T QTShareDataT< T >::get_data(int add)
 {
     if (add >= this->m_size / sizeof(T))
     {
@@ -245,7 +252,7 @@ T QTShareDataT< T >::get_data(uint add)
 template < class T >
 T QTShareDataT< T >::get_data(const T * addr)
 {
-    if ((addr - this->m_data) >= this->m_size / sizeof(T))
+    if ((addr - this->m_data) >= m_classSize)
     {
         printf("get data off\n");
         return *this->m_data;
@@ -258,9 +265,9 @@ T QTShareDataT< T >::get_data(const T * addr)
 }
 
 template < class T >
-int QTShareDataT< T >::get_data(uint add, T & val)
+int QTShareDataT< T >::get_data(int add, T & val)
 {
-    if (add >= this->m_size / sizeof(T))
+    if (add >= m_classSize)
     {
         zprintf1("get data off\n");
         return -1;
@@ -274,7 +281,7 @@ int QTShareDataT< T >::get_data(uint add, T & val)
 template < class T >
 int QTShareDataT< T >::get_data(const T * addr, T& val)
 {
-    if ((addr - this->m_data) >= this->m_size / sizeof(T))
+    if ((addr - this->m_data) >= m_classSize)
     {
         zprintf1("get data off\n");
         return -1;
@@ -287,9 +294,9 @@ int QTShareDataT< T >::get_data(const T * addr, T& val)
 }
 
 template < class T >
-void QTShareDataT< T >::noblock_set_data(uint add, T val)
+void QTShareDataT< T >::noblock_set_data(int add, T val)
 {
-    if (add >= this->m_size / sizeof(T))
+    if (add >= m_classSize)
     {
         zprintf1("set data off\n");
         return;
@@ -298,9 +305,9 @@ void QTShareDataT< T >::noblock_set_data(uint add, T val)
 }
 
 template < class T >
-T QTShareDataT< T >::noblock_get_data(uint add)
+T QTShareDataT< T >::noblock_get_data(int add)
 {
-    if (add >= this->m_size / sizeof(T))
+    if (add >= m_classSize)
     {
         zprintf1("get data off\n");
         return *this->m_data;
@@ -311,9 +318,9 @@ T QTShareDataT< T >::noblock_get_data(uint add)
 }
 
 template < class T >
-int QTShareDataT< T >::noblock_get_data(uint add, T & val)
+int QTShareDataT< T >::noblock_get_data(int add, T & val)
 {
-    if (add >= this->m_size / sizeof(T))
+    if (add >= m_classSize)
     {
         zprintf1("get data off\n");
         return -1;
