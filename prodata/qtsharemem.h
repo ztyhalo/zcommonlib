@@ -237,7 +237,7 @@ void QTShareDataT< T >::set_data(T* addr,  T  val)
 template < class T >
 T QTShareDataT< T >::get_data(int add)
 {
-    if (add >= this->m_size / sizeof(T))
+    if (add >= m_classSize)
     {
         printf("get data off\n");
         return *this->m_data;

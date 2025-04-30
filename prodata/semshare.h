@@ -31,8 +31,8 @@ class Sem_Share_Data : public ShareDataT< T >
     key_t   m_semKey;
 
   public:
-    Sem_Share_Data():m_semid(-1),m_created(0),m_num_p(NULL),
-          m_semKey(19860610),m_bufsize(0),m_pRd(NULL),m_pWr(NULL)
+    Sem_Share_Data():m_semid(-1),m_bufsize(0),m_created(0),m_pRd(NULL),m_pWr(NULL),m_num_p(NULL),
+          m_semKey(19860610)
     {
         ;
     }
