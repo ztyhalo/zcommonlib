@@ -43,6 +43,7 @@ SOURCES += \
     prodata/sem/syssem.cpp \
     prodata/zlockerclass.cpp \
     prodata/zqtsharemem.cpp \
+    prodata/zsysshm.cpp \
     prodata/zsystemsem.cpp \
     socket/socket.cpp \
     tcp/tcp_class.cpp \
@@ -71,6 +72,7 @@ HEADERS += \
     prodata/zmap.h \
     prodata/zmsg.h \
     prodata/zqtsharemem.h \
+    prodata/zsysshm.h \
     prodata/zsystemsem.h \
     reflect/reflect.h \
     reflect/xmlprocess.h \

@@ -1,84 +1,44 @@
-/****************************************************
- *************进程间通讯数据库**********************
- *Version: 1.1
- *History: 2017.7.3
- *         2017.7.6添加回调类
- *         2017.7.11 将1个文件拆分为多个文件
- *         2025.4.18 优化
- *
- ****************************************************/
-
-#ifndef __SHAREMEM_H__
-#define __SHAREMEM_H__
-
-
-#include "pro_data.h"
-#include <string.h>
-#include "zsystemsem.h"
 #include "zsysshm.h"
+#include <sys/shm.h>
 #include "zlockerclass.h"
 
-using namespace std;
-
-
-// linux共享内存 不继承线程类
-template < class T >
-class ShareDataT : public creatdata< T >
+ZSysShm::ZSysShm():m_shmKey(0),m_memory(0),m_size(0),m_state(SHMOK),m_createShm(0)
 {
-public:
-   enum AccessMode
-    {
-        ReadOnly,
-        ReadWrite
-    };
-  public:
+    ;
+}
 
-    key_t       m_shmKey;
-    void *      m_memory;
-    ZSystemSem  m_sysSem;
-
-  public:
-    ShareDataT():m_shmKey(0),m_memory(0)
+ZSysShm::~ZSysShm()
+{
+    zprintf3("share data destruct\n");
+    if(isAttached())
     {
-        ;
+        detach();
     }
-    virtual ~ShareDataT()
-    {
-        zprintf3("share data destruct\n");
-        if(isAttached())
-        {
-            detach();
-        }
-        this->m_data = NULL;
-    }
-    bool init_key();
-    bool lock();
-    bool unlock();
-    bool create(int size);
-    bool attach(AccessMode mode = ReadWrite);
-    bool isAttached() const;
-    bool detach();
-    int clean_handle();
-    int creat_data(int size) override;
-    int creat_data(int size, key_t id);
-    int read_creat_data(key_t id = 20130408, int size = 0);
-};
+    // this->m_data = NULL;
+}
 
-template < class T >
-int ShareDataT< T >::clean_handle()
+
+bool ZSysShm::init_key()
+{
+    m_sysSem.setKey(string(), 1);
+    m_sysSem.setKey(std::to_string(m_shmKey), 1);
+    return m_sysSem.syssemOk();
+}
+
+
+int ZSysShm::clean_handle()
 {
     m_shmKey = 0;
     return 0;
 }
 
-template < class T >
-bool ShareDataT< T >::isAttached() const
+bool ZSysShm::isAttached() const
 {
     return (0 != m_memory);
 }
 
-template < class T >
-bool ShareDataT< T >::lock()
+
+bool ZSysShm::semLock()
 {
     if(m_sysSem.acquire())
     {
@@ -88,8 +48,7 @@ bool ShareDataT< T >::lock()
     return false;
 }
 
-template < class T >
-bool ShareDataT< T >::unlock()
+bool ZSysShm::semUnlock()
 {
     if(m_sysSem.release())
     {
@@ -99,8 +58,19 @@ bool ShareDataT< T >::unlock()
     return false;
 }
 
-template < class T >
-bool ShareDataT< T >::create(int size)
+bool ZSysShm::lock()
+{
+    m_shmMutex.lock();
+    return semLock();
+}
+
+bool ZSysShm::unlock()
+{
+    semUnlock();
+    return m_shmMutex.unlock();
+}
+
+bool ZSysShm::create(int size)
 {
     bool ret = true;
     if(-1 == shmget(m_shmKey, size, 0600 | IPC_CREAT |IPC_EXCL)) //不存在则创建，存在返回错误eexist
@@ -113,16 +83,19 @@ bool ShareDataT< T >::create(int size)
                 break;
             case EEXIST:
                 zprintf2("create shm id %d is have!\n", m_shmKey);
+                m_state = SHMEXIST;
+                ret = false;
                 break;
             default:
                 zprintf1("create shm id errno %d!\n", errno);
                 ret = false;
         }
     }
+    m_createShm = 1;
     return ret;
 }
-template < class T >
-bool ShareDataT< T >::attach(AccessMode mode)
+
+bool ZSysShm::attach(AccessMode mode)
 {
     int   shmid = shmget(m_shmKey, 0, (mode == ReadOnly ? 0400 : 0600));
     int   size;
@@ -150,15 +123,17 @@ bool ShareDataT< T >::attach(AccessMode mode)
     if(size != this->m_size)
     {
         zprintf1("share data: size %d m_size %d!\n", size, this->m_size);
-        this->m_size = size;
+        m_state = SHMSIZEERR;
+        if(!detach())
+            zprintf1("ZSysShm attach detach error!\n");
+        return false;
     }
     return true;
 }
 
-template < class T >
-bool ShareDataT< T >::detach()
+bool ZSysShm::detach()
 {
-    ZLockerClass<ShareDataT<T>> locker(this);
+    ZLockerClass<ZSysShm> locker(this);
     locker.lock();
     if(-1 == shmdt(m_memory))
     {
@@ -174,7 +149,7 @@ bool ShareDataT< T >::detach()
     }
 
     m_memory = 0;
-    this->m_size = 0;
+    m_size = 0;
 
     int id = shmget(m_shmKey, 0, 0400);
     clean_handle();
@@ -182,10 +157,10 @@ bool ShareDataT< T >::detach()
     struct shmid_ds shmid_ds;
     if (0 != shmctl(id, IPC_STAT, &shmid_ds)) {
         switch (errno) {
-        case EINVAL:
-            return true;
-        default:
-            return false;
+            case EINVAL:
+                return true;
+            default:
+                return false;
         }
     }
 
@@ -195,27 +170,39 @@ bool ShareDataT< T >::detach()
         {
             zprintf1("ShareDataT detach IPC_RMID err!\n");
             switch (errno) {
-            case EINVAL:
-                return true;
-            default:
-                return false;
+                case EINVAL:
+                    return true;
+                default:
+                    return false;
             }
         }
+        m_createShm = 0;
+    }
+    if(m_createShm)
+    {
+        if(shmid_ds.shm_nattch != 0)
+        {
+            zprintf1("warning ZSysShm release error!\n");
+            shmid_ds.shm_nattch = 0;
+        }
+        if(-1 == shmctl(id, IPC_RMID, &shmid_ds))
+        {
+            zprintf1("ShareDataT detach IPC_RMID err!\n");
+            switch (errno) {
+                case EINVAL:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+        m_createShm = 0;
     }
 
     return true;
 }
 
-template < class T >
-bool ShareDataT< T >::init_key()
-{
-    m_sysSem.setKey(string(), 1);
-    m_sysSem.setKey(std::to_string(m_shmKey), 1);
-    return m_sysSem.syssemOk();
-}
 
-template < class T >
-int ShareDataT< T >::creat_data(int size)
+int ZSysShm::createData(int size)
 {
     zprintf2("shm id is %d\n", m_shmKey);
 
@@ -226,7 +213,7 @@ int ShareDataT< T >::creat_data(int size)
     }
     m_sysSem.setKey(std::to_string(m_shmKey), 1, ZSystemSem::Create);
 
-    ZLockerClass<ShareDataT<T>> locker(this);
+    ZLockerClass<ZSysShm> locker(this);
     locker.lock();
 
     if(!create(size))
@@ -239,23 +226,19 @@ int ShareDataT< T >::creat_data(int size)
         return -3;
     }
 
-    this->m_data = (T*) m_memory;
-
     return 0;
 }
 
-template < class T >
-int ShareDataT< T >::creat_data(int size, key_t id)
+int ZSysShm::createData(int size, key_t id)
 {
     m_shmKey = id;
-    return creat_data(size);
+    return createData(size);
 }
 
-template < class T >
-int ShareDataT< T >::read_creat_data(key_t id, int size)
+int ZSysShm::readCreateData(key_t id, int size)
 {
 
-    ZLockerClass<ShareDataT<T>> locker(this);
+    ZLockerClass<ZSysShm> locker(this);
     locker.lock();
 
     if(0 != m_shmKey)
@@ -272,8 +255,15 @@ int ShareDataT< T >::read_creat_data(key_t id, int size)
         return -2;
     }
 
-    this->data = (T*) m_memory;
     return 0;
 }
 
-#endif /*__SHAREMEM_H__*/
+void *ZSysShm::data()
+{
+    return m_memory;
+}
+
+int ZSysShm::size() const
+{
+    return m_size;
+}
