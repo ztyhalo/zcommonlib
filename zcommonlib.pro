@@ -45,6 +45,7 @@ SOURCES += \
     prodata/zqtsharemem.cpp \
     prodata/zsysshm.cpp \
     prodata/zsystemsem.cpp \
+    reflect/tbundle.cpp \
     socket/socket.cpp \
     tcp/tcp_class.cpp \
     tcp/tcp_client.cpp \
@@ -59,6 +60,7 @@ HEADERS += \
     epoll/e_poll.h \
     file/zfile.h \
     mutex/mutex_class.h \
+    prodata/DiffQtShareDataT.h \
     prodata/clist.h \
     prodata/lsystemsem.h \
     prodata/pro_data.h \
@@ -75,6 +77,7 @@ HEADERS += \
     prodata/zsysshm.h \
     prodata/zsystemsem.h \
     reflect/reflect.h \
+    reflect/tbundle.h \
     reflect/xmlprocess.h \
     sempro/semprocess.h \
     sigslot/sigslot.h \

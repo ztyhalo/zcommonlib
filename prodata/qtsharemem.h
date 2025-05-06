@@ -14,7 +14,7 @@
 #include <QVector>
 #include <QString>
 #include <QSharedMemory>
-#include "pro_data.h"
+// #include "pro_data.h"
 #include <string.h>
 #include "zlockerclass.h"
 #include "zqtsharemem.h"
@@ -104,10 +104,11 @@ private:
         zprintf3("QTShareDataT destruct!\n");
     }
 
-    int  creat_data(int size);
+    // int  creat_data(int size);
     T*   creat_data(int size, const QString & keyid, AccessMode mode);
+    int  create_data(int size, const QString & keyid);
     int  read_creat_data(int size, const QString & keyid = "lhshare");
-    void set_data(int add, const T & val) ;
+    virtual void set_data(int add, const T & val) ;
     void set_data(T* addr,  T  val);
     T    get_data(int add) ;
     T    get_data(const T* addr);
@@ -132,27 +133,52 @@ void QTShareDataT< T >::unlock_qtshare(void)
 }
 
 
-template < class T >
-int QTShareDataT< T >::creat_data(int size)
-{   
-    if(this->newcreateData(size) == 0)
-    {
+// template < class T >
+// int QTShareDataT< T >::creat_data(int size)
+// {
+//     if(this->newcreateData(size) == 0)
+//     {
 
+//         ZLockerClass<QTShareDataT< T >> locker(this);
+//         locker.lock();
+
+//         this->m_data = (T*) data();
+//         this->m_size =  this->size();
+//         if(size != this->m_size)
+//         {
+//             zprintf1("QTShareDataT size %d create size %d!\n", size, this->m_size);
+//         }
+//         m_classSize = (int)(this->m_size / sizeof(T));
+//     }
+//     else
+//         zprintf1("QTShareDataT create size error!\n");
+
+
+//     return 0;
+// }
+template < class T >
+int  QTShareDataT< T >::create_data(int size, const QString & keyid)
+{
+    this->m_data = (T*)createData(size, keyid, Create);
+    if(this->m_data == NULL)
+    {
+        zprintf1("QTShareDataT create %s error!\n", keyid.toStdString().c_str());
+        return -1;
+    }
+    else
+    {
         ZLockerClass<QTShareDataT< T >> locker(this);
         locker.lock();
 
-        this->m_data = (T*) data();
         this->m_size =  this->size();
+
         if(size != this->m_size)
         {
             zprintf1("QTShareDataT size %d create size %d!\n", size, this->m_size);
+            return -2;
         }
         m_classSize = (int)(this->m_size / sizeof(T));
     }
-    else
-        zprintf1("QTShareDataT create size error!\n");
-
-
     return 0;
 }
 
@@ -174,6 +200,7 @@ T* QTShareDataT< T >::creat_data(int size, const QString & keyid, AccessMode mod
         if(size != this->m_size)
         {
             zprintf1("QTShareDataT size %d create size %d!\n", size, this->m_size);
+            return NULL;
         }
         m_classSize = (int)(this->m_size / sizeof(T));
 

@@ -13,7 +13,7 @@
 #include <cstring>
 #include <stddef.h>
 #include <QDomDocument>
-
+#include "tbundle.h"
 
 using namespace std;
 
@@ -545,6 +545,7 @@ class ParaseToType
         else if (m.m_type.compare(typeid(string).name()) == 0)
         {
             string* strmem = (string*) add;
+            strmem->clear();
             strmem->append(val.toStdString());
         }
         else
@@ -652,6 +653,21 @@ class ParaseToType
 
             void* th = (((byte*) add) + (*iter).m_offset);
             string_data(*iter, va, th);
+        }
+        return true;
+    }
+
+    bool set_bundle(void* add, TBundle bundle)
+    {
+        for (auto iter = _T::fieldinfo.begin(); iter != _T::fieldinfo.end(); iter++)
+        {
+            QString key = QString::fromStdString(iter->name);
+            if (bundle.contains(key))
+            {
+                QString va = bundle.get(key).toString();
+                void*   th = (((byte*) add) + (*iter).offset);
+                string_data(*iter, va, th);
+            }
         }
         return true;
     }

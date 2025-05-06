@@ -11,7 +11,7 @@
 
 #include "qtsharemem.h"
 #include "syssem.h"
-
+#include "pro_data.h"
 using namespace  std;
 
 

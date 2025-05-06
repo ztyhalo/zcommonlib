@@ -15,76 +15,76 @@ class XMLProcess : public ParaseToType< T1 >
         for (auto iter = T1::fieldinfo.begin(); iter != T1::fieldinfo.end(); iter++)
         {
 
-            if ((*iter).type.compare(typeid(int).name()) == 0)
+            if ((*iter).m_type.compare(typeid(int).name()) == 0)
             {
-                attr    = doc.createAttribute((*iter).name.c_str());
-                int* th = (int*) (((byte*) &t) + (*iter).offset);
+                attr    = doc.createAttribute((*iter).m_name.c_str());
+                int* th = (int*) (((byte*) &t) + (*iter).m_offset);
 
                 attr.setValue(QString("%1").arg(*th));
                 userElement.setAttributeNode(attr);
             }
-            else if ((*iter).type.compare(typeid(uint).name()) == 0)
+            else if ((*iter).m_type.compare(typeid(uint).name()) == 0)
             {
-                attr     = doc.createAttribute((*iter).name.c_str());
-                uint* th = (uint*) (((byte*) &t) + (*iter).offset);
+                attr     = doc.createAttribute((*iter).m_name.c_str());
+                uint* th = (uint*) (((byte*) &t) + (*iter).m_offset);
 
                 attr.setValue(QString("%1").arg(*th));
                 userElement.setAttributeNode(attr);
             }
-            else if ((*iter).type.compare(typeid(double).name()) == 0)
+            else if ((*iter).m_type.compare(typeid(double).name()) == 0)
             {
 
-                attr       = doc.createAttribute((*iter).name.c_str());
-                double* th = (double*) (((byte*) &t) + (*iter).offset);
+                attr       = doc.createAttribute((*iter).m_name.c_str());
+                double* th = (double*) (((byte*) &t) + (*iter).m_offset);
 
                 attr.setValue(QString("%1").arg(*th));
                 userElement.setAttributeNode(attr);
             }
-            else if ((*iter).type.compare(typeid(string).name()) == 0)
+            else if ((*iter).m_type.compare(typeid(string).name()) == 0)
             {
-                attr           = doc.createAttribute((*iter).name.c_str());
-                byte*   th     = (((byte*) &t) + (*iter).offset);
+                attr           = doc.createAttribute((*iter).m_name.c_str());
+                byte*   th     = (((byte*) &t) + (*iter).m_offset);
                 string* strmem = (string*) th;
 
                 attr.setValue(strmem->c_str());
                 userElement.setAttributeNode(attr);
             }
-            else if ((*iter).type.compare(typeid(short).name()) == 0)
+            else if ((*iter).m_type.compare(typeid(short).name()) == 0)
             {
-                attr      = doc.createAttribute((*iter).name.c_str());
-                short* th = (short*) (((byte*) &t) + (*iter).offset);
+                attr      = doc.createAttribute((*iter).m_name.c_str());
+                short* th = (short*) (((byte*) &t) + (*iter).m_offset);
 
                 attr.setValue(QString("%1").arg(*th));
                 userElement.setAttributeNode(attr);
             }
-            else if ((*iter).type.compare(typeid(ushort).name()) == 0)
+            else if ((*iter).m_type.compare(typeid(ushort).name()) == 0)
             {
-                attr       = doc.createAttribute((*iter).name.c_str());
-                ushort* th = (ushort*) (((byte*) &t) + (*iter).offset);
+                attr       = doc.createAttribute((*iter).m_name.c_str());
+                ushort* th = (ushort*) (((byte*) &t) + (*iter).m_offset);
 
                 attr.setValue(QString("%1").arg(*th));
                 userElement.setAttributeNode(attr);
             }
-            else if ((*iter).type.compare(typeid(int8_t).name()) == 0)
+            else if ((*iter).m_type.compare(typeid(int8_t).name()) == 0)
             {
-                attr       = doc.createAttribute((*iter).name.c_str());
-                int8_t* th = (int8_t*) (((byte*) &t) + (*iter).offset);
+                attr       = doc.createAttribute((*iter).m_name.c_str());
+                int8_t* th = (int8_t*) (((byte*) &t) + (*iter).m_offset);
 
                 attr.setValue(QString("%1").arg(*th));
                 userElement.setAttributeNode(attr);
             }
-            else if ((*iter).type.compare(typeid(uchar).name()) == 0)
+            else if ((*iter).m_type.compare(typeid(uchar).name()) == 0)
             {
-                attr      = doc.createAttribute((*iter).name.c_str());
-                uchar* th = (uchar*) (((byte*) &t) + (*iter).offset);
+                attr      = doc.createAttribute((*iter).m_name.c_str());
+                uchar* th = (uchar*) (((byte*) &t) + (*iter).m_offset);
 
                 attr.setValue(QString("%1").arg(*th));
                 userElement.setAttributeNode(attr);
             }
-            else if ((*iter).type.compare(typeid(char).name()) == 0)
+            else if ((*iter).m_type.compare(typeid(char).name()) == 0)
             {
-                attr     = doc.createAttribute((*iter).name.c_str());
-                char* th = (char*) (((byte*) &t) + (*iter).offset);
+                attr     = doc.createAttribute((*iter).m_name.c_str());
+                char* th = (char*) (((byte*) &t) + (*iter).m_offset);
 
                 attr.setValue(QString("%1").arg(*th));
                 userElement.setAttributeNode(attr);

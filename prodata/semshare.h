@@ -10,9 +10,10 @@
 #define __SEMSHARE_H__
 
 // #include <mutex>
-#include "prodata/sharemem.h"
+#include "sharemem.h"
 #include "syssem.h"
-
+#include "zlockerclass.h"
+#include "pro_data.h"
 using namespace  std;
 
 
@@ -200,10 +201,10 @@ void Sem_Pth_Data< T, FAT >::run(void)
 {
     while (this->running)
     {
-        if (sem_p(this->semid) == 0)
+        if (sem_p(this->m_semid) == 0)
         {
             T val;
-            if (read_send_data(val) == 0)
+            if (this->read_send_data(val) == 0)
             {
                 if (this->z_callbak != NULL) //执行操作
                 {
