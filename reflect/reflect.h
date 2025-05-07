@@ -339,8 +339,8 @@ class ParaseToType
             int    newoffset = strvalue.find(';', stroffset);
             string ty        = strvalue.substr(stroffset, newoffset - stroffset);
 
-            byte* th = (((byte*) &t) + (*iter).offset);
-            CopyValueOnMemory(th, (*iter).type, ty);
+            byte* th = (((byte*) &t) + (*iter).m_offset);
+            CopyValueOnMemory(th, (*iter).m_type, ty);
 
             stroffset = newoffset + 1;
         }
@@ -353,23 +353,23 @@ class ParaseToType
         for (auto iter = _T::fieldinfo.begin(); iter != _T::fieldinfo.end(); iter++)
         {
 
-            if ((*iter).type.compare(typeid(int).name()) == 0)
+            if ((*iter).m_type.compare(typeid(int).name()) == 0)
             {
-                byte* th = (((byte*) &t) + (*iter).offset);
-                memcpy((byte*) add + (*iter).offset, th, sizeof(int));
+                byte* th = (((byte*) &t) + (*iter).m_offset);
+                memcpy((byte*) add + (*iter).m_offset, th, sizeof(int));
             }
-            else if ((*iter).type.compare(typeid(double).name()) == 0)
+            else if ((*iter).m_type.compare(typeid(double).name()) == 0)
             {
 
-                byte* th = (((byte*) &t) + (*iter).offset);
-                memcpy((byte*) add + (*iter).offset, th, sizeof(double));
+                byte* th = (((byte*) &t) + (*iter).m_offset);
+                memcpy((byte*) add + (*iter).m_offset, th, sizeof(double));
             }
-            else if ((*iter).type.compare(typeid(string).name()) == 0)
+            else if ((*iter).m_type.compare(typeid(string).name()) == 0)
             {
-                byte*   th     = (((byte*) add) + (*iter).offset);
+                byte*   th     = (((byte*) add) + (*iter).m_offset);
                 string* strmem = (string*) th;
 
-                string* value = (string*) (((byte*) &t) + (*iter).offset);
+                string* value = (string*) (((byte*) &t) + (*iter).m_offset);
 
                 strmem->append(value->c_str());
             }
@@ -391,23 +391,23 @@ class ParaseToType
         for (auto iter = _T::fieldinfo.begin(); iter != _T::fieldinfo.end(); iter++)
         {
 
-            if ((*iter).type.compare(typeid(int).name()) == 0)
+            if ((*iter).m_type.compare(typeid(int).name()) == 0)
             {
-                byte* th = (((byte*) &t) + (*iter).offset);
-                memcpy(th, (byte*) add + (*iter).offset, sizeof(int));
+                byte* th = (((byte*) &t) + (*iter).m_offset);
+                memcpy(th, (byte*) add + (*iter).m_offset, sizeof(int));
             }
-            else if ((*iter).type.compare(typeid(double).name()) == 0)
+            else if ((*iter).m_type.compare(typeid(double).name()) == 0)
             {
 
-                byte* th = (((byte*) &t) + (*iter).offset);
-                memcpy(th, (byte*) add + (*iter).offset, sizeof(double));
+                byte* th = (((byte*) &t) + (*iter).m_offset);
+                memcpy(th, (byte*) add + (*iter).m_offset, sizeof(double));
             }
-            else if ((*iter).type.compare(typeid(string).name()) == 0)
+            else if ((*iter).m_type.compare(typeid(string).name()) == 0)
             {
-                byte*   th     = (((byte*) &t) + (*iter).offset);
+                byte*   th     = (((byte*) &t) + (*iter).m_offset);
                 string* strmem = (string*) th;
 
-                string* value = (string*) (((byte*) add) + (*iter).offset);
+                string* value = (string*) (((byte*) add) + (*iter).m_offset);
                 strmem->append(value->c_str());
             }
             else
@@ -661,11 +661,11 @@ class ParaseToType
     {
         for (auto iter = _T::fieldinfo.begin(); iter != _T::fieldinfo.end(); iter++)
         {
-            QString key = QString::fromStdString(iter->name);
+            QString key = QString::fromStdString(iter->m_name);
             if (bundle.contains(key))
             {
                 QString va = bundle.get(key).toString();
-                void*   th = (((byte*) add) + (*iter).offset);
+                void*   th = (((byte*) add) + (*iter).m_offset);
                 string_data(*iter, va, th);
             }
         }
