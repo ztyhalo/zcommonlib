@@ -7,6 +7,10 @@
 
 using namespace std;
 
+#define EINTR_LOOP(var, cmd)                    \
+do {                                        \
+        var = cmd;                              \
+} while (var == -1 && errno == EINTR)
 
 class LSystemSem
 {
@@ -39,7 +43,11 @@ public:
 
 public:
     LSystemSem();
-    virtual ~LSystemSem();
+    virtual ~LSystemSem()
+    {
+        zprintf3("LSystemSem destruct!\n");
+        cleanHandle();
+    }
 
     int handle(AccessMode mode = Open);
     void cleanHandle();
@@ -50,6 +58,19 @@ public:
     int readSemKey(key_t semkey);
     bool acquire();
     bool release(int n = 1);
+    bool syssemOk() const
+    {
+        return (m_semId != -1);
+    }
+    int getSemCount() const
+    {
+        if(m_semId == -1)
+            return -1;
+        union semun sem_union;
+
+        return semctl(m_semId, 0, GETVAL, sem_union);
+
+    }
 
 };
 

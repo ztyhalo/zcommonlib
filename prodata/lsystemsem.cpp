@@ -5,12 +5,6 @@ LSystemSem::LSystemSem():m_semKey(-1),m_semId(-1),m_initVal(0),m_created(false)
     ;
 }
 
-LSystemSem::~LSystemSem()
-{
-    zprintf3("LSystemSem destruct!\n");
-    cleanHandle();
-}
-
 void LSystemSem::cleanHandle()
 {
     if(m_created)
@@ -101,8 +95,8 @@ int LSystemSem::createSem(key_t semkey , int initval)
         if(errno == EEXIST)
         {
             zprintf1("LSystemSem createsem %d is exist!\n", semkey);
-            m_created = false;
-            m_semId = semget(semkey, 1, 0600 | IPC_CREAT);
+            // m_created = false;
+            // m_semId = semget(semkey, 1, 0600 | IPC_CREAT);
         }
         if(-1 == m_semId)
         {
@@ -152,7 +146,8 @@ bool LSystemSem::modifySemaphore(int count)
     operation.sem_flg = SEM_UNDO;
 
     int res;
-    res = semop(m_semId, &operation, 1);
+    // res = semop(m_semId, &operation, 1);
+    EINTR_LOOP(res, semop(m_semId, &operation, 1));
     if( -1 == res)
     {
         if(errno == EINVAL || errno == EIDRM)
@@ -186,7 +181,8 @@ LSystemSem::SemOpTimeState LSystemSem::modifySemaphore(int count, int ms)
 
     // register int res;
     int res;
-    res = semtimedop(m_semId, &operation, 1, &timeout);
+    // res = semtimedop(m_semId, &operation, 1, &timeout);
+    EINTR_LOOP(res, semtimedop(m_semId, &operation, 1, &timeout));
     if( -1 == res)
     {
         if(errno == EINVAL || errno == EIDRM)

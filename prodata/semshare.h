@@ -14,6 +14,7 @@
 #include "syssem.h"
 #include "zlockerclass.h"
 #include "pro_data.h"
+#include "lsystemsem.h"
 using namespace  std;
 
 
@@ -22,18 +23,18 @@ template < class T >
 class Sem_Share_Data : public ShareDataT< T >
 {
   public:
-    int     m_semid;
+    // int     m_semid;
     int     m_bufsize;
-    int     m_created;
+    // int     m_created;
 
     int *   m_pRd;
     int *   m_pWr;
     int *   m_num_p;
-    key_t   m_semKey;
+    // key_t   m_semKey;
+    LSystemSem m_sem;
 
   public:
-    Sem_Share_Data():m_semid(-1),m_bufsize(0),m_created(0),m_pRd(NULL),m_pWr(NULL),m_num_p(NULL),
-          m_semKey(19860610)
+    Sem_Share_Data():m_bufsize(0),m_pRd(NULL),m_pWr(NULL),m_num_p(NULL)
     {
         ;
     }
@@ -49,24 +50,26 @@ class Sem_Share_Data : public ShareDataT< T >
     }
     void cleanHandle()
     {
-        if(m_created)
-        {
-            if(-1 != m_semid)
-            {
-                if(-1 == semctl(m_semid, 0, IPC_RMID, 0))
-                {
-                    zprintf1("Sem_Share_Data rm msem %d error!\n", m_semid);
-                }
-                m_semid = -1;
-            }
-            m_created = 0;
-        }
+        // if(m_created)
+        // {
+        //     if(-1 != m_semid)
+        //     {
+        //         if(-1 == semctl(m_semid, 0, IPC_RMID, 0))
+        //         {
+        //             zprintf1("Sem_Share_Data rm msem %d error!\n", m_semid);
+        //         }
+        //         m_semid = -1;
+        //     }
+        //     m_created = 0;
+        // }
+        m_sem.cleanHandle();
     }
 
     void realeseSem()
     {
-        if(m_semid > 0)
-            sem_v(m_semid);
+        // if(m_semid > 0)
+        //     sem_v(m_semid);
+        m_sem.release(1);
     }
 
     int creat_sem_data(uint size, key_t semkey = 19860610, key_t sharekey = 20130410);
@@ -103,14 +106,11 @@ int Sem_Share_Data< T >::creat_sem_data(uint size, key_t semkey, key_t sharekey)
         *m_pWr = 0;
         *m_num_p = 0;
 
-        m_semid     = new_create_sem(semkey, 0, m_created);
-        if(m_semid <= 0)
+        if(m_sem.setKey(semkey, 0, LSystemSem::Create) != 0)
         {
-            zprintf1("Sem_Share_Data create_sem %d error !\n",semkey);
+            zprintf1("Sem_Qt_Data create_sem %d error !\n",semkey);
+            err = -2;
         }
-        else
-            m_semKey = semkey;
-        err = m_semid > 0 ? 0 : -2;
     }
     else
         zprintf1("Sem_Share_Data create sharekey %d error !\n",sharekey);
@@ -137,7 +137,7 @@ int Sem_Share_Data< T >::write_send_data(const T & val)
     *m_pWr = mid;
     count++;
     *m_num_p = count;
-    sem_v(m_semid);
+    m_sem.release(1);
     return 0;
 }
 
@@ -168,7 +168,7 @@ int Sem_Share_Data< T >::read_send_data(T & val)
 template < class T >
 int Sem_Share_Data< T >::wait_thread_sem(void)
 {
-    if (sem_p(m_semid) == 0)
+    if(m_sem.acquire() ==true)
         return 0;
     else
         return -1;
@@ -201,7 +201,7 @@ void Sem_Pth_Data< T, FAT >::run(void)
 {
     while (this->running)
     {
-        if (sem_p(this->m_semid) == 0)
+        if (this->wait_thread_sem() == 0)
         {
             T val;
             if (this->read_send_data(val) == 0)

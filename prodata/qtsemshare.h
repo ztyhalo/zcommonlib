@@ -12,6 +12,7 @@
 #include "qtsharemem.h"
 #include "syssem.h"
 #include "pro_data.h"
+#include "lsystemsem.h"
 using namespace  std;
 
 
@@ -21,23 +22,23 @@ template < class T >
 class Sem_Qt_Data : public QTShareDataT< T >
 {
   public:
-    int         m_semId;
+    // int         m_semId;
     int         m_bufSize;
-    // int         m_num;
-    int         m_created;
+    // int         m_created;
     int     *   m_pRd;
     int     *   m_pWr;
     int     *   m_pSize;
-    key_t       m_semKey;
+    // key_t       m_semKey;
+    LSystemSem  m_sem;
 
   public:
-    Sem_Qt_Data():m_semId(-1),m_bufSize(0),m_created(0),
-          m_pRd(NULL),m_pWr(NULL),m_pSize(NULL),m_semKey(19860610)
+    Sem_Qt_Data():m_bufSize(0),
+          m_pRd(NULL),m_pWr(NULL),m_pSize(NULL)
     {
         ;
     }
     explicit Sem_Qt_Data(int size, key_t semkey = 19860610, const QString & sharekey = "lhshare"):
-        m_semId(-1),m_bufSize(0),m_created(0),m_pRd(NULL),m_pWr(NULL),m_pSize(NULL),m_semKey(19860610)
+        m_bufSize(0),m_pRd(NULL),m_pWr(NULL),m_pSize(NULL)
     {
         creat_sem_data(size, semkey, sharekey, ZQTShareMem::Open);
     }
@@ -49,25 +50,27 @@ class Sem_Qt_Data : public QTShareDataT< T >
 
     void cleanHandle()
     {
-        if(m_created)
-        {
-            zprintf1("sem_qtdata rm msem %d keyid %d!\n", m_semId, m_semKey);
-            if(-1 != m_semId)
-            {
-                if(-1 == semctl(m_semId, 0, IPC_RMID, 0))
-                {
-                    perror("semctl IPC_RMID failed");
-                    zprintf1("Sem_Qt_Data rm msem %d error code:%d!\n", m_semId, errno);
-                }
-                m_semId = -1;
-            }
-            m_created = 0;
-        }
+        // if(m_created)
+        // {
+        //     zprintf1("sem_qtdata rm msem %d keyid %d!\n", m_semId, m_semKey);
+        //     if(-1 != m_semId)
+        //     {
+        //         if(-1 == semctl(m_semId, 0, IPC_RMID, 0))
+        //         {
+        //             perror("semctl IPC_RMID failed");
+        //             zprintf1("Sem_Qt_Data rm msem %d error code:%d!\n", m_semId, errno);
+        //         }
+        //         m_semId = -1;
+        //     }
+        //     m_created = 0;
+        // }
+        m_sem.cleanHandle();
     }
     void realeseSem()
     {
-        if(m_semId > 0)
-            sem_v(m_semId);
+        // if(m_semId > 0)
+        //     sem_v(m_semId);
+        m_sem.release(1);
     }
     int creat_sem_data(int size, key_t semkey, const QString & sharekey,
                        ZQTShareMem::AccessMode mode);
@@ -107,14 +110,19 @@ int Sem_Qt_Data< T >::creat_sem_data(int size, key_t semkey, const QString & sha
         *m_pWr = 0;
         *m_pSize = 0;
 
-        m_semId     = new_create_sem(semkey, 0, m_created);
-        if(m_semId <= 0)
+        // m_semId     = new_create_sem(semkey, 0, m_created);
+        // if(m_semId <= 0)
+        // {
+        //     zprintf1("Sem_Qt_Data create_sem %d error !\n",semkey);
+        // }
+        // else
+        //     m_semKey = semkey;
+        // err = m_semId > 0 ? 0 : -2;
+        if(m_sem.setKey(semkey, 0, (LSystemSem::AccessMode)mode) != 0)
         {
             zprintf1("Sem_Qt_Data create_sem %d error !\n",semkey);
+            err = -2;
         }
-        else
-            m_semKey = semkey;
-        err = m_semId > 0 ? 0 : -2;
     }
     else
     {
@@ -145,7 +153,8 @@ int Sem_Qt_Data< T >::write_send_data(const T & val)
     count++;
     *m_pSize = count;
 
-    sem_v(m_semId);
+    // sem_v(m_semId);
+    m_sem.release(1);
     return 0;
 }
 
@@ -182,7 +191,7 @@ int Sem_Qt_Data< T >::a8_read_send_data(T & val)  //专门为a8系统，没有�
     int mid = *m_pRd;
     int count = * m_pSize;
     int i = 0;
-    int zs = get_sem_count(m_semId);
+    int zs = m_sem.getSemCount();
 
     if(count <= 0)
     {
@@ -213,7 +222,8 @@ int Sem_Qt_Data< T >::a8_read_send_data(T & val)  //专门为a8系统，没有�
 template < class T >
 int Sem_Qt_Data< T >::wait_thread_sem(void)
 {
-    if (sem_p(m_semId) == 0)
+    // if (sem_p(m_semId) == 0)
+    if(m_sem.acquire() ==true)
         return 0;
     else
         return -1;
@@ -251,7 +261,8 @@ void Sem_QtPth_Data< T, FAT >::run(void)
     while (this->running)
     {
 #if (__GLIBC__ > 2) || (__GLIBC__ == 2 && __GLIBC_MINOR__ > 18)  // glibc ≥ 2.4 的代码逻辑
-        int ret = sem_p(this->m_semId);
+        // int ret = sem_p(this->m_semId);
+        int ret = this->wait_thread_sem();
         if (ret == 0)
         {
 
