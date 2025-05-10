@@ -11,10 +11,7 @@
 #include <fcntl.h>
 #include <sys/eventfd.h>
 #include <sys/epoll.h>
-// #include <stdlib.h>
-// #include <string.h>
-// #include <stdlib.h>
-// #include <stdio.h>
+
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/timerfd.h>
@@ -23,7 +20,7 @@
 // #include <errno.h>
 #include "zprint.h"
 // #include <vector>
-#include <atomic>
+#include "pthclass.h"
 
 #define MAXFDS 8
 #define EVENTS 100
@@ -55,32 +52,6 @@ public:
 
 };
 
-class Pth_Class
-{
-private:
-    pthread_t m_pid;
-    string    m_name;
-public:
-    std::atomic<int> running;
-private:
-    static void * start_thread(void * arg);
-
- public:
-    explicit Pth_Class():m_pid(0),m_name(""),running(0){
-        ;
-     }
-    virtual ~Pth_Class();
-
-     int start(const string & name ="");
-
-     int stop();
-
-     int waitEnd();
-
-     virtual void run() = 0;
-
-
-};
 
 
 class NCbk_Poll:public z_poll,public Pth_Class

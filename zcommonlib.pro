@@ -37,13 +37,16 @@ SOURCES += \
     bufmodel/ZBufModel.cpp \
     date/com_date.cpp \
     epoll/e_poll.cpp \
+    epoll/pthclass.cpp \
     file/zfile.cpp \
     mutex/mutex_class.cpp \
     prodata/lsystemsem.cpp \
     prodata/sem/syssem.cpp \
     prodata/zlockerclass.cpp \
     prodata/zqtsharemem.cpp \
+    prodata/zsharememrw.cpp \
     prodata/zsysshm.cpp \
+    prodata/zsysshmbase.cpp \
     prodata/zsystemsem.cpp \
     reflect/tbundle.cpp \
     socket/socket.cpp \
@@ -58,10 +61,11 @@ HEADERS += \
     bufmodel/ZBufModel.h \
     date/com_date.h \
     epoll/e_poll.h \
+    epoll/pthclass.h \
     file/zfile.h \
     mutex/mutex_class.h \
-    prodata/DiffQtShareDataT.h \
     prodata/clist.h \
+    prodata/diffqtsharedataT.h \
     prodata/lsystemsem.h \
     prodata/pro_data.h \
     prodata/ptdataapp.h \
@@ -69,12 +73,16 @@ HEADERS += \
     prodata/qtsharemem.h \
     prodata/sem/syssem.h \
     prodata/semshare.h \
+    prodata/sharedateprocessT.h \
     prodata/sharemem.h \
+    prodata/zbufT.h \
     prodata/zlockerclass.h \
     prodata/zmap.h \
     prodata/zmsg.h \
     prodata/zqtsharemem.h \
+    prodata/zsharememrw.h \
     prodata/zsysshm.h \
+    prodata/zsysshmbase.h \
     prodata/zsystemsem.h \
     reflect/reflect.h \
     reflect/tbundle.h \

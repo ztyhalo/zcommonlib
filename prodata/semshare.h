@@ -9,32 +9,24 @@
 #ifndef __SEMSHARE_H__
 #define __SEMSHARE_H__
 
-// #include <mutex>
+
 #include "sharemem.h"
 #include "syssem.h"
 #include "zlockerclass.h"
-#include "pro_data.h"
+
+#include "pthclass.h"
 #include "lsystemsem.h"
+#include "zsharememrw.h"
 using namespace  std;
 
 
 // linux共享内存加信号 不继承线程类
 template < class T >
-class Sem_Share_Data : public ShareDataT< T >
+class Sem_Share_Data : public ShareDataT< T >,public ZSharememRW
 {
-  public:
-    // int     m_semid;
-    int     m_bufsize;
-    // int     m_created;
-
-    int *   m_pRd;
-    int *   m_pWr;
-    int *   m_num_p;
-    // key_t   m_semKey;
-    LSystemSem m_sem;
 
   public:
-    Sem_Share_Data():m_bufsize(0),m_pRd(NULL),m_pWr(NULL),m_num_p(NULL)
+    Sem_Share_Data()
     {
         ;
     }
@@ -45,37 +37,12 @@ class Sem_Share_Data : public ShareDataT< T >
     virtual ~Sem_Share_Data()
     {
         zprintf3("Sem_Share_Data destruct!\n");
-        cleanHandle();
 
-    }
-    void cleanHandle()
-    {
-        // if(m_created)
-        // {
-        //     if(-1 != m_semid)
-        //     {
-        //         if(-1 == semctl(m_semid, 0, IPC_RMID, 0))
-        //         {
-        //             zprintf1("Sem_Share_Data rm msem %d error!\n", m_semid);
-        //         }
-        //         m_semid = -1;
-        //     }
-        //     m_created = 0;
-        // }
-        m_sem.cleanHandle();
-    }
-
-    void realeseSem()
-    {
-        // if(m_semid > 0)
-        //     sem_v(m_semid);
-        m_sem.release(1);
     }
 
     int creat_sem_data(uint size, key_t semkey = 19860610, key_t sharekey = 20130410);
     int write_send_data(const T & val);
     int read_send_data(T& val);
-    int wait_thread_sem(void);
 };
 
 template < class T >
@@ -92,7 +59,7 @@ int Sem_Share_Data< T >::creat_sem_data(uint size, key_t semkey, key_t sharekey)
 
 
     err     = this->creat_data(alinesize, sharekey);
-    m_bufsize = size / sizeof(T);
+    m_bufSize = size / sizeof(T);
     if (err == 0)
     {
         ZLockerClass<Sem_Share_Data< T >> locker(this);
@@ -101,10 +68,10 @@ int Sem_Share_Data< T >::creat_sem_data(uint size, key_t semkey, key_t sharekey)
         midp += aline/4;
         m_pRd  = midp;
         m_pWr  = midp + 1;
-        m_num_p = midp + 2;
+        m_pSize = midp + 2;
         *m_pRd = 0;
         *m_pWr = 0;
-        *m_num_p = 0;
+        *m_pSize = 0;
 
         if(m_sem.setKey(semkey, 0, LSystemSem::Create) != 0)
         {
@@ -123,20 +90,20 @@ int Sem_Share_Data< T >::write_send_data(const T & val)
 
     ZLockerClass<Sem_Share_Data< T >> locker(this);
     locker.lock();
-    int count = *m_num_p;
-    if(count >= m_bufsize)
+    int count = *m_pSize;
+    if(count >= m_bufSize)
     {
         zprintf1("write off \n");
         return -1;
     }
     int mid = *m_pWr;
 
-    this->set_data(mid, val);
+    this->noblock_set_data(mid, val);
     mid++;
-    mid %= m_bufsize;
+    mid %= m_bufSize;
     *m_pWr = mid;
     count++;
-    *m_num_p = count;
+    *m_pSize = count;
     m_sem.release(1);
     return 0;
 }
@@ -146,7 +113,7 @@ int Sem_Share_Data< T >::read_send_data(T & val)
 {
     ZLockerClass<Sem_Share_Data< T >> locker(this);
     locker.lock();
-    int count = *m_num_p;
+    int count = *m_pSize;
     if(count <= 0)
     {
         zprintf3("read send data error!\n");
@@ -154,25 +121,18 @@ int Sem_Share_Data< T >::read_send_data(T & val)
     }
     int mid = *m_pRd;
 
-    this->get_data(mid, val);
+    this->noblock_get_data(mid, val);
 
     mid++;
-    mid %= m_bufsize;
+    mid %= m_bufSize;
 
     *m_pRd = mid;
     count--;
-    *m_num_p = count;
+    *m_pSize = count;
 
     return 0;
 }
-template < class T >
-int Sem_Share_Data< T >::wait_thread_sem(void)
-{
-    if(m_sem.acquire() ==true)
-        return 0;
-    else
-        return -1;
-}
+
 
 // linux共享内存加信号 继承线程类
 template < class T, class FAT >

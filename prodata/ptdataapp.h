@@ -11,6 +11,63 @@
 #include <map>
 #include "semshare.h"
 #include "qtsemshare.h"
+#include "pro_data.h"
+
+#define FATHER_DEV_MAX      256
+
+typedef struct
+{
+    int num;
+    int parentid;
+    int childid;
+    int pointid;
+    double value;
+    int  state;
+}sDataUnit;     //主动上报共享内存
+
+class cDataUnit
+{
+public:
+    int num;
+    int parentid;
+    int childid;
+    int pointid;
+    double value;
+    int  state;
+public:
+    cDataUnit(int  mark, int devid, int cid, int node, double val, int  st):
+        num(mark),parentid(devid), childid(cid),pointid(node),value(val), state(st)
+    {
+        ;
+    }
+    cDataUnit()
+    {
+        memset(this, 0x00, sizeof(cDataUnit));
+    }
+    void set_all(const cDataUnit & val)
+    {
+        *this = val;
+    }
+    void set_val(double val)
+    {
+        value = val;
+    }
+    void set_val_state(double val, int st)
+    {
+        value = val;
+        state = st;
+    }
+};
+
+typedef struct
+{
+    int num;
+    int parentid;
+    int childid;
+    int pointid;
+    double value;
+    int  state;
+}soutDataUnit;
 
 //多个设备共用一个共享空间 PTYPE共享内存类型 DTYPE数据类型
 template < class PTYPE, class DTYPE >

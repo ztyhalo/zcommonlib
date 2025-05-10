@@ -11,77 +11,43 @@
 
 #include "qtsharemem.h"
 #include "syssem.h"
-#include "pro_data.h"
+// #include "pro_data.h"
 #include "lsystemsem.h"
+#include "zsharememrw.h"
+#include "pthclass.h"
 using namespace  std;
 
 
 
 // qt共享内存加linux信号 不继承线程类
 template < class T >
-class Sem_Qt_Data : public QTShareDataT< T >
+class Sem_Qt_Data : public QTShareDataT< T >,public ZSharememRW
 {
   public:
-    // int         m_semId;
-    int         m_bufSize;
-    // int         m_created;
-    int     *   m_pRd;
-    int     *   m_pWr;
-    int     *   m_pSize;
-    // key_t       m_semKey;
-    LSystemSem  m_sem;
-
-  public:
-    Sem_Qt_Data():m_bufSize(0),
-          m_pRd(NULL),m_pWr(NULL),m_pSize(NULL)
+    Sem_Qt_Data()
     {
         ;
     }
-    explicit Sem_Qt_Data(int size, key_t semkey = 19860610, const QString & sharekey = "lhshare"):
-        m_bufSize(0),m_pRd(NULL),m_pWr(NULL),m_pSize(NULL)
+    explicit Sem_Qt_Data(int size, key_t semkey = 19860610, const QString & sharekey = "lhshare")
     {
-        creat_sem_data(size, semkey, sharekey, ZQTShareMem::Open);
+        creat_sem_data(size, semkey, sharekey, ZSysShmBase::Open);
     }
     virtual ~Sem_Qt_Data()
     {
         zprintf3("destory Sem_Qt_Data!\n");
-        cleanHandle();
+        // cleanHandle();
     }
 
-    void cleanHandle()
-    {
-        // if(m_created)
-        // {
-        //     zprintf1("sem_qtdata rm msem %d keyid %d!\n", m_semId, m_semKey);
-        //     if(-1 != m_semId)
-        //     {
-        //         if(-1 == semctl(m_semId, 0, IPC_RMID, 0))
-        //         {
-        //             perror("semctl IPC_RMID failed");
-        //             zprintf1("Sem_Qt_Data rm msem %d error code:%d!\n", m_semId, errno);
-        //         }
-        //         m_semId = -1;
-        //     }
-        //     m_created = 0;
-        // }
-        m_sem.cleanHandle();
-    }
-    void realeseSem()
-    {
-        // if(m_semId > 0)
-        //     sem_v(m_semId);
-        m_sem.release(1);
-    }
     int creat_sem_data(int size, key_t semkey, const QString & sharekey,
-                       ZQTShareMem::AccessMode mode);
+                       ZSysShmBase::AccessMode mode);
     int write_send_data(const T & val);
     int read_send_data(T& val);
     int a8_read_send_data(T& val);
-    int wait_thread_sem(void);
+    // int wait_thread_sem(void);
 };
 
 template < class T >
-int Sem_Qt_Data< T >::creat_sem_data(int size, key_t semkey, const QString & sharekey, ZQTShareMem::AccessMode mode)
+int Sem_Qt_Data< T >::creat_sem_data(int size, key_t semkey, const QString & sharekey, ZSysShmBase::AccessMode mode)
 {
     int       err     = 0;
     int *     midp    = NULL;
@@ -110,14 +76,6 @@ int Sem_Qt_Data< T >::creat_sem_data(int size, key_t semkey, const QString & sha
         *m_pWr = 0;
         *m_pSize = 0;
 
-        // m_semId     = new_create_sem(semkey, 0, m_created);
-        // if(m_semId <= 0)
-        // {
-        //     zprintf1("Sem_Qt_Data create_sem %d error !\n",semkey);
-        // }
-        // else
-        //     m_semKey = semkey;
-        // err = m_semId > 0 ? 0 : -2;
         if(m_sem.setKey(semkey, 0, (LSystemSem::AccessMode)mode) != 0)
         {
             zprintf1("Sem_Qt_Data create_sem %d error !\n",semkey);
@@ -219,15 +177,6 @@ int Sem_Qt_Data< T >::a8_read_send_data(T & val)  //专门为a8系统，没有�
 
 }
 
-template < class T >
-int Sem_Qt_Data< T >::wait_thread_sem(void)
-{
-    // if (sem_p(m_semId) == 0)
-    if(m_sem.acquire() ==true)
-        return 0;
-    else
-        return -1;
-}
 
 // qt共享内存加linux信号 继承线程类
 template < class T, class FAT >

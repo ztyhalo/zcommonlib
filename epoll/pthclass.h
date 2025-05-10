@@ -1,0 +1,94 @@
+#ifndef PTHCLASS_H
+#define PTHCLASS_H
+
+#include <sys/types.h>
+#include <fcntl.h>
+#include <sys/eventfd.h>
+#include <sys/epoll.h>
+
+#include <sys/time.h>
+#include <sys/resource.h>
+#include <sys/timerfd.h>
+#include <unistd.h>
+#include <pthread.h>
+
+#include <atomic>
+#include <string>
+#include "zprint.h"
+
+using namespace std;
+
+class Pth_Class
+{
+private:
+    pthread_t m_pid;
+    string    m_name;
+public:
+    std::atomic<int> running;
+private:
+    static void * start_thread(void * arg);
+
+public:
+    explicit Pth_Class():m_pid(0),m_name(""),running(0){
+        ;
+    }
+    virtual ~Pth_Class();
+
+    int start(const string & name ="");
+
+    int stop();
+
+    int waitEnd();
+
+    virtual void run() = 0;
+
+
+};
+
+//线程回调类
+template < class DTYPE, class F >
+class Call_B_T : public Pth_Class
+{
+public:
+    F* father;
+
+public:
+    Call_B_T();
+    virtual ~Call_B_T()
+    {
+        zprintf3("destory Call_B_T!\n");
+        this->running = 0;
+    }
+
+    int (*z_callbak)(F* pro, DTYPE val);
+
+    int set_z_callback(int (*callback)(F* pro, DTYPE), F* arg);
+    int z_pthread_init(int (*callback)(F* pro, DTYPE), F* arg, const string & pthName="");
+};
+
+template < class DTYPE, class F >
+Call_B_T< DTYPE, F >::Call_B_T():father(NULL),z_callbak(NULL)
+{
+    ;
+}
+template < class DTYPE, class F >
+int Call_B_T< DTYPE, F >::set_z_callback(int (*callback)(F* pro, DTYPE), F* arg)
+{
+    if (callback != NULL)
+    {
+        z_callbak = callback;
+        father    = arg;
+        return 0;
+    }
+    return -1;
+}
+
+template < class DTYPE, class F >
+int Call_B_T< DTYPE, F >::z_pthread_init(int (*callback)(F* pro, DTYPE), F* arg, const string & pthName)
+{
+    set_z_callback(callback, arg);
+    start(pthName);
+    return 0;
+}
+
+#endif // PTHCLASS_H

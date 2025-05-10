@@ -150,17 +150,25 @@ int ZQTShareMem::size() const
 {
     return m_lhshare.size();
 }
-
-bool ZQTShareMem::lock(void)
+bool ZQTShareMem::semLock()
 {
-    m_mutex.lock();
     return m_lhshare.lock();
 }
-bool ZQTShareMem::unlock(void)
+
+bool ZQTShareMem::semUnlock()
 {
-    m_lhshare.unlock();
-    return m_mutex.unlock();
+    return m_lhshare.unlock();
 }
+// bool ZQTShareMem::lock(void)
+// {
+//     m_mutex.lock();
+//     return m_lhshare.lock();
+// }
+// bool ZQTShareMem::unlock(void)
+// {
+//     m_lhshare.unlock();
+//     return m_mutex.unlock();
+// }
 
 void *ZQTShareMem::data()
 {

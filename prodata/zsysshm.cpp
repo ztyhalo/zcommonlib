@@ -2,7 +2,10 @@
 #include <sys/shm.h>
 #include "zlockerclass.h"
 
-ZSysShm::ZSysShm():m_shmKey(0),m_memory(0),m_size(0),m_state(SHMOK),m_createShm(0)
+
+
+
+ZSysShm::ZSysShm():m_shmKey(0) //,m_memory(0),m_size(0),m_state(SHMOK),m_createShm(0)
 {
     ;
 }
@@ -58,17 +61,17 @@ bool ZSysShm::semUnlock()
     return false;
 }
 
-bool ZSysShm::lock()
-{
-    m_shmMutex.lock();
-    return semLock();
-}
+// bool ZSysShm::lock()
+// {
+//     m_shmMutex.lock();
+//     return semLock();
+// }
 
-bool ZSysShm::unlock()
-{
-    semUnlock();
-    return m_shmMutex.unlock();
-}
+// bool ZSysShm::unlock()
+// {
+//     semUnlock();
+//     return m_shmMutex.unlock();
+// }
 
 bool ZSysShm::create(int size)
 {
@@ -97,7 +100,7 @@ bool ZSysShm::create(int size)
 
 bool ZSysShm::attach(AccessMode mode)
 {
-    int   shmid = shmget(m_shmKey, 0, (mode == ReadOnly ? 0400 : 0600));
+    int   shmid = shmget(m_shmKey, 0, (mode == Open ? 0400 : 0600));
     int   size;
     if(-1 == shmid)
     {
@@ -105,7 +108,7 @@ bool ZSysShm::attach(AccessMode mode)
         return false;
     }
 
-    m_memory = shmat(shmid, 0, (mode == ReadOnly ? SHM_RDONLY : 0));
+    m_memory = shmat(shmid, 0, (mode == Create ? SHM_RDONLY : 0));
     if ((void*) - 1 == m_memory) {
         m_memory = 0;
         zprintf1("share data ::attach (shmat) error!\n");

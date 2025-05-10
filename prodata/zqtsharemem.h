@@ -5,26 +5,22 @@
 #include <QString>
 #include <QSharedMemory>
 #include "zprint.h"
-#include "mutex_class.h"
+// #include "mutex_class.h"
+#include "zsysshmbase.h"
 
 using namespace std;
 
-class ZQTShareMem
+class ZQTShareMem:public ZSysShmBase
 {
-public:
-    enum AccessMode
-    {
-        Open,
-        Create
-    };
+
 public:
     QSharedMemory m_lhshare;
     QString       m_shmKey;
-    bool          m_createShm;
-    MUTEX_CLASS   m_mutex;
+    // bool          m_createShm;
+    // MUTEX_CLASS   m_mutex;
 
 public:
-    ZQTShareMem():m_shmKey(""),m_createShm(false)
+    ZQTShareMem():m_shmKey("") //,m_createShm(false)
     {
         m_lhshare.setKey(m_shmKey);
     }
@@ -43,12 +39,15 @@ public:
         }
     }
     bool    destory();
-    int     size() const;
-    void    *data();
+    int     size() const override;
+    void    *data() override;
     int     newcreateData(int size);
     void*   createData(int size, const QString & keyid, AccessMode mode = Open);
-    bool    lock(void);
-    bool    unlock(void);
+
+    // bool    lock(void);
+    // bool    unlock(void);
+    bool semLock() override;
+    bool semUnlock() override;
     int     readCreateData(int size, const QString & keyid);
 
 };

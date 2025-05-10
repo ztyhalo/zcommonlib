@@ -14,88 +14,20 @@
 #include <QVector>
 #include <QString>
 #include <QSharedMemory>
-// #include "pro_data.h"
+
 #include <string.h>
 #include "zlockerclass.h"
 #include "zqtsharemem.h"
+#include "sharedateprocessT.h"
 using namespace std;
 
 
 // QT共享内存 不继承线程类
 template < class T >
-class QT_Share_MemT:public ZQTShareMem
+class QTShareDataT :public ZQTShareMem, public ShareDataProcessT<T>
 {
-public:
-    T*      m_data;
-
   public:
-    QT_Share_MemT():m_data(NULL)
-    {
-        ;
-    }
-    virtual ~QT_Share_MemT()
-    {
-        zprintf3("QT_Share_MemT destruct!\n");
-    }
-
-    // int  creat_data(int size);
-    T*   creat_data(int size, const QString & keyid, AccessMode mode);
-    void lock_qtshare(void);
-    void unlock_qtshare(void);
-    void set_data(T * addr, T  val);
-
-};
-
-template < class T >
-void QT_Share_MemT< T >::lock_qtshare(void)
-{
-    lock();
-}
-template < class T >
-void QT_Share_MemT< T >::unlock_qtshare(void)
-{
-    unlock();
-}
-
-// template < class T >
-// int QT_Share_MemT< T >::creat_data(int size)
-// {
-//     if(this->newcreateData(size) == 0)
-//         this->m_data = (T*)data();
-//     else
-//         zprintf1("QT_Share_MemT create size error!\n");
-//     return 0;
-// }
-
-template < class T >
-T* QT_Share_MemT< T >::creat_data(int size, const QString & keyid, AccessMode mode)
-{
-    this->m_data = (T *)createData(size, keyid, mode);
-    if(this->m_data == NULL)
-        zprintf1("QT_Share_MemT create %s error!\n", keyid.toStdString().c_str());
-    return this->m_data;
-}
-
-template <class T>
-void QT_Share_MemT<T>::set_data(T * addr, T  val)
-{
-    if(addr == NULL) return ;
-    lock();
-    *addr = val;
-    unlock();
-}
-
-// QT共享内存 不继承线程类
-template < class T >
-class QTShareDataT :public ZQTShareMem
-{
-public:
-    T*      m_data;
-    int     m_size;      //表示为sizeof(T)*num;
-private:
-    int     m_classSize;
-  public:
-    QTShareDataT():m_data(NULL),m_size(0),m_classSize(0)
+    QTShareDataT()
     {
         ;
     }
@@ -104,21 +36,14 @@ private:
         zprintf3("QTShareDataT destruct!\n");
     }
 
-    // int  creat_data(int size);
     T*   creat_data(int size, const QString & keyid, AccessMode mode);
     int  create_data(int size, const QString & keyid);
     int  read_creat_data(int size, const QString & keyid = "lhshare");
-    virtual void set_data(int add, const T & val) ;
-    void set_data(T* addr,  T  val);
-    T    get_data(int add) ;
-    T    get_data(const T* addr);
-    int  get_data(int add, T& val);
-    int  get_data(const T* addr, T& val);
-    void noblock_set_data(int add, T val);
-    T    noblock_get_data(int add);
-    int  noblock_get_data(int add, T& val);
+
     void lock_qtshare(void);
     void unlock_qtshare(void);
+    bool dateLock(void) override;
+    bool  dateUnlock(void) override;
 };
 
 template < class T >
@@ -132,30 +57,17 @@ void QTShareDataT< T >::unlock_qtshare(void)
     unlock();
 }
 
+template < class T >
+bool QTShareDataT< T >::dateLock(void)
+{
+    return this->lock();
+}
+template < class T >
+bool QTShareDataT< T >::dateUnlock(void)
+{
+    return this->unlock();
+}
 
-// template < class T >
-// int QTShareDataT< T >::creat_data(int size)
-// {
-//     if(this->newcreateData(size) == 0)
-//     {
-
-//         ZLockerClass<QTShareDataT< T >> locker(this);
-//         locker.lock();
-
-//         this->m_data = (T*) data();
-//         this->m_size =  this->size();
-//         if(size != this->m_size)
-//         {
-//             zprintf1("QTShareDataT size %d create size %d!\n", size, this->m_size);
-//         }
-//         m_classSize = (int)(this->m_size / sizeof(T));
-//     }
-//     else
-//         zprintf1("QTShareDataT create size error!\n");
-
-
-//     return 0;
-// }
 template < class T >
 int  QTShareDataT< T >::create_data(int size, const QString & keyid)
 {
@@ -177,7 +89,7 @@ int  QTShareDataT< T >::create_data(int size, const QString & keyid)
             zprintf1("QTShareDataT size %d create size %d!\n", size, this->m_size);
             return -2;
         }
-        m_classSize = (int)(this->m_size / sizeof(T));
+        this->m_classSize = (int)(this->m_size / sizeof(T));
     }
     return 0;
 }
@@ -202,7 +114,7 @@ T* QTShareDataT< T >::creat_data(int size, const QString & keyid, AccessMode mod
             zprintf1("QTShareDataT size %d create size %d!\n", size, this->m_size);
             return NULL;
         }
-        m_classSize = (int)(this->m_size / sizeof(T));
+        this->m_classSize = (int)(this->m_size / sizeof(T));
 
     }
     return this->m_data;
@@ -224,7 +136,7 @@ int QTShareDataT< T >::read_creat_data(int size, const QString & keyid)
             zprintf1("QTShareDataT read create size %d create size %d!\n", size, this->m_size);
             return -1;
         }
-        m_classSize = (int)(this->m_size / sizeof(T));
+        this->m_classSize = (int)(this->m_size / sizeof(T));
         return 0;
     }
     else
@@ -233,127 +145,6 @@ int QTShareDataT< T >::read_creat_data(int size, const QString & keyid)
         return -2;
     }
 
-}
-
-template < class T >
-void QTShareDataT< T >::set_data(int add, const T & val)
-{
-    if (add >= m_classSize)
-    {
-        zprintf1("set data off\n");
-        return;
-    }
-    lock();
-    memcpy(this->m_data + add, &val, sizeof(T));
-    unlock();
-}
-
-template < class T >
-void QTShareDataT< T >::set_data(T* addr,  T  val)
-{
-    if ((addr - this->m_data) >= m_classSize)
-    {
-        zprintf1("set data off\n");
-        return;
-    }
-    lock();
-    *addr = val;
-    unlock();
-}
-
-template < class T >
-T QTShareDataT< T >::get_data(int add)
-{
-    if (add >= m_classSize)
-    {
-        printf("get data off\n");
-        return *this->m_data;
-    }
-    T mid;
-    lock();
-    mid = *(this->m_data + add);
-    unlock();
-    return mid;
-}
-
-template < class T >
-T QTShareDataT< T >::get_data(const T * addr)
-{
-    if ((addr - this->m_data) >= m_classSize)
-    {
-        printf("get data off\n");
-        return *this->m_data;
-    }
-    T mid;
-    lock();
-    mid = *(addr);
-    unlock();
-    return mid;
-}
-
-template < class T >
-int QTShareDataT< T >::get_data(int add, T & val)
-{
-    if (add >= m_classSize)
-    {
-        zprintf1("get data off\n");
-        return -1;
-    }
-
-    lock();
-    val = *(this->m_data + add);
-    unlock();
-    return 0;
-}
-template < class T >
-int QTShareDataT< T >::get_data(const T * addr, T& val)
-{
-    if ((addr - this->m_data) >= m_classSize)
-    {
-        zprintf1("get data off\n");
-        return -1;
-    }
-
-    lock();
-    val = *(addr);
-    unlock();
-    return 0;
-}
-
-template < class T >
-void QTShareDataT< T >::noblock_set_data(int add, T val)
-{
-    if (add >= m_classSize)
-    {
-        zprintf1("set data off\n");
-        return;
-    }
-    memcpy(this->m_data + add, &val, sizeof(T));
-}
-
-template < class T >
-T QTShareDataT< T >::noblock_get_data(int add)
-{
-    if (add >= m_classSize)
-    {
-        zprintf1("get data off\n");
-        return *this->m_data;
-    }
-    T mid;
-    mid = *(this->m_data + add);
-    return mid;
-}
-
-template < class T >
-int QTShareDataT< T >::noblock_get_data(int add, T & val)
-{
-    if (add >= m_classSize)
-    {
-        zprintf1("get data off\n");
-        return -1;
-    }
-    val = *(this->m_data + add);
-    return 0;
 }
 
 #endif /*__SHAREMEM_H__*/
