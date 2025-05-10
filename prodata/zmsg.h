@@ -32,15 +32,17 @@ class Z_Msg
         long int type;
         MSGDATA  val;
     } ZMSG;
-
+    ZMSG m_msgDta;
   public:
-    Z_Msg(int key = 0, int type = 1) : m_msgKey(key), m_msgType(type),m_msgId(-1),m_created(0)
+    Z_Msg(int key = 0, int type = 1) : m_msgKey(key),m_msgId(-1),m_msgType(type),m_created(0)
     {
         if (key != 0)
         {
             create_object();
             struct msqid_ds info;
             msgctl(m_msgId, IPC_STAT, &info);
+            // memset(&m_msgDta, 0x00, sizeof(ZMSG));
+            m_msgDta.type = 1;
         }
     }
 
@@ -83,8 +85,10 @@ class Z_Msg
     bool delete_object(void);
     bool send_object(MSGDATA data);
     bool receive_object(MSGDATA& val, int mode);
+    bool receive_object(void *pdata, int *psize, int mode);
     int  GetMsgKey(void) const;
     bool send_object(MSGDATA data, int type);
+    bool send_object(void * pdata, int size, int type = 1);
 };
 
 template < class MSGDATA >
@@ -125,12 +129,11 @@ bool Z_Msg< MSGDATA >::delete_object(void)
 template < class MSGDATA >
 bool Z_Msg< MSGDATA >::send_object(MSGDATA data)
 {
-    ZMSG v;
-    v.type = m_msgType;
-    v.val  = data;
+    m_msgDta.type = m_msgType;
+    m_msgDta.val  = data;
 
 
-    if (msgsnd(m_msgId, &v, sizeof(MSGDATA), IPC_NOWAIT) == -1)
+    if (msgsnd(m_msgId, &m_msgDta, sizeof(MSGDATA), IPC_NOWAIT) == -1)
     {
         struct msqid_ds info;
         zprintf1("Z_Msg send failed!\n");
@@ -145,11 +148,34 @@ bool Z_Msg< MSGDATA >::send_object(MSGDATA data)
 template < class MSGDATA >
 bool Z_Msg< MSGDATA >::send_object(MSGDATA data, int type)
 {
-    ZMSG v;
-    v.type = type;
-    v.val  = data;
 
-    if (msgsnd(m_msgId, &v, sizeof(MSGDATA), IPC_NOWAIT) == -1)
+    m_msgDta.type = type;
+    m_msgDta.val  = data;
+
+    if (msgsnd(m_msgId, &m_msgDta, sizeof(MSGDATA), IPC_NOWAIT) == -1)
+    {
+        struct msqid_ds info;
+        zprintf1("send failed222!\n");
+        fprintf(stderr, "msgrcv failed width erro222: %d\n", errno);
+        msgctl(m_msgId, IPC_STAT, &info);
+        zprintf1("发送失败 read-write:%03o,cbytes=%lu,qnum=%lu,qbytes =%lu\n",
+                 info.msg_perm.mode&777, (ulong)info.__msg_cbytes,(ulong)info.msg_qnum,(ulong)info.msg_qbytes);
+        return false;
+    }
+    zprintf3("send success!\n");
+    return true;
+}
+template < class MSGDATA >
+bool Z_Msg< MSGDATA >::send_object(void * pdata, int size, int type)
+{
+
+    if((size > (int)(sizeof(MSGDATA)))|| (pdata ==NULL))
+        return false;
+    m_msgDta.type = type;
+
+    memcpy(m_msgDta.val, (char*)pdata, size);
+
+    if (msgsnd(m_msgId, &m_msgDta, size, IPC_NOWAIT) == -1)
     {
         struct msqid_ds info;
         zprintf1("send failed222!\n");
@@ -163,15 +189,13 @@ bool Z_Msg< MSGDATA >::send_object(MSGDATA data, int type)
     return true;
 }
 
+
 template < class MSGDATA >
-bool Z_Msg< MSGDATA >::receive_object(MSGDATA& val, int mode)
+bool Z_Msg< MSGDATA >::receive_object(MSGDATA & val, int mode)
 {
     int len;
 
-    ZMSG v;
-
-
-    len = msgrcv(m_msgId, &v, sizeof(MSGDATA), m_msgType, mode);
+    len = msgrcv(m_msgId, &m_msgDta, sizeof(MSGDATA), m_msgType, mode);
     if (len == -1)
     {
         struct msqid_ds info;
@@ -181,7 +205,25 @@ bool Z_Msg< MSGDATA >::receive_object(MSGDATA& val, int mode)
                     info.msg_perm.mode&777, (ulong)info.__msg_cbytes,(ulong)info.msg_qnum,(ulong)info.msg_qbytes);
         return false;
     }
-    val = v.val;
+    val = m_msgDta.val;
+    return true;
+}
+template < class MSGDATA >
+bool Z_Msg< MSGDATA >::receive_object(void *pdata,int *psize,int mode)
+{
+
+    if(pdata == NULL || psize == NULL)
+        return false;
+     int len;
+
+    len = msgrcv(m_msgId, &m_msgDta, sizeof(MSGDATA), m_msgType, mode);
+    if( len ==-1)
+    {
+        return false;
+    }
+
+    *psize = len;
+    memcpy(pdata, &m_msgDta.val, len);
     return true;
 }
 
