@@ -3,6 +3,9 @@
 
 #include <string.h>
 
+
+#define CON_OUT_BUF_SIZE 256
+
 typedef struct
 {
     int num;
