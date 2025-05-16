@@ -48,7 +48,7 @@ SOURCES += \
     prodata/zsysshm.cpp \
     prodata/zsysshmbase.cpp \
     prodata/zsystemsem.cpp \
-    ptdrivercommon.cpp \
+    ptdriver/ptdrivercommon.cpp \
     reflect/tbundle.cpp \
     socket/socket.cpp \
     tcp/tcp_class.cpp \
@@ -85,7 +85,7 @@ HEADERS += \
     prodata/zsysshm.h \
     prodata/zsysshmbase.h \
     prodata/zsystemsem.h \
-    ptdrivercommon.h \
+    ptdriver/ptdrivercommon.h \
     reflect/reflect.h \
     reflect/tbundle.h \
     reflect/xmlprocess.h \

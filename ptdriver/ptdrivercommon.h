@@ -1,8 +1,7 @@
 #ifndef PTDRIVERCOMMON_H
 #define PTDRIVERCOMMON_H
-#include <string.h>
 
-#define CON_OUT_BUF_SIZE 256
+#include <string.h>
 
 typedef struct
 {
