@@ -163,13 +163,14 @@ z_poll::~z_poll()
 
     if(m_active)
     {
+        m_active = 0;
 
-        if(m_epFd)
-            close(m_epFd);
         if(m_eventFd > 0)
             close(m_eventFd);
         m_eventFd = -1;
-        m_active = 0;
+
+        if(m_epFd)
+            close(m_epFd);
         m_epFd = 0;
 
     }

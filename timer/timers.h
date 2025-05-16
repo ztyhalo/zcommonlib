@@ -85,6 +85,8 @@ public:
         if(this->running)
         {
             this->running = 0;
+            stopPoll();
+            this->waitEnd();
             lock();
             typename std::map<int, TimerEvent<FROM, TO> *>::iterator it;
             it = poll_map.begin();
@@ -98,8 +100,7 @@ public:
                 ++it;
             }
             unlock();
-            stopPoll();
-            this->waitEnd();
+
         }
     }
     int add_event(double internal_value,int  (*callback)(TimerEvent<FROM, TO> *) = NULL,
