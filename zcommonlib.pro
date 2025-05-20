@@ -23,7 +23,7 @@ INCLUDEPATH = .\
               prodata\
               prodata/sem\
               reflect\
-              sempro\
+              msgpro\
               sigslot\
               socket\
               tcp\
@@ -48,7 +48,6 @@ SOURCES += \
     prodata/zsysshm.cpp \
     prodata/zsysshmbase.cpp \
     prodata/zsystemsem.cpp \
-    ptdriver/ptdrivercommon.cpp \
     reflect/tbundle.cpp \
     socket/socket.cpp \
     tcp/tcp_class.cpp \
@@ -64,6 +63,7 @@ HEADERS += \
     epoll/e_poll.h \
     epoll/pthclass.h \
     file/zfile.h \
+    msgpro/msgprocess.h \
     mutex/mutex_class.h \
     prodata/clist.h \
     prodata/diffqtsharedataT.h \
@@ -85,11 +85,9 @@ HEADERS += \
     prodata/zsysshm.h \
     prodata/zsysshmbase.h \
     prodata/zsystemsem.h \
-    ptdriver/ptdrivercommon.h \
     reflect/reflect.h \
     reflect/tbundle.h \
     reflect/xmlprocess.h \
-    sempro/semprocess.h \
     sigslot/sigslot.h \
     socket/socket.h \
     tcp/tcp_class.h \

@@ -173,7 +173,7 @@ bool Z_Msg< MSGDATA >::send_object(void * pdata, int size, int type)
         return false;
     m_msgDta.type = type;
 
-    memcpy(m_msgDta.val, (char*)pdata, size);
+    memcpy(&m_msgDta.val, (char*)pdata, size);
 
     if (msgsnd(m_msgId, &m_msgDta, size, IPC_NOWAIT) == -1)
     {

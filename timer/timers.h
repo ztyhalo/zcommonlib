@@ -13,6 +13,7 @@
 #include <map>
 #include "e_poll.h"
 #include "mutex_class.h"
+#include <thread>
 
 #define  TIMER_SIZE_MAX           16
 
@@ -174,5 +175,20 @@ typedef TimerEvent<void,void> TEvent;
 void linuxDly(int s, int ms);
 void linuxDly(int ms);
 int set_delay_ts(struct timespec * ts, int sec);
+
+
+#define SLEEP(array)                                                                                                   \
+do{                                                                                                                  \
+        std::this_thread::sleep_for(std::chrono::seconds(array));                                                      \
+}while(0)
+#define MSLEEP(array)                                                                                                  \
+do{                                                                                                                  \
+        std::this_thread::sleep_for(std::chrono::milliseconds(array));                                                 \
+}while(0)
+#define USLEEP(array)                                                                                                  \
+do{                                                                                                                  \
+        std::this_thread::sleep_for(std::chrono::microseconds(array));                                                 \
+}while(0)
+
 #endif // TIMERS_H
 
