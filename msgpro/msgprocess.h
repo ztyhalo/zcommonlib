@@ -64,11 +64,17 @@ class MsgRevClass : public Z_Msg< MSGDATA >, public MUTEX_CLASS, public Pth_Clas
     void run(void)
     {
         MSGDATA val;
+        int     len;
         while (this->running)
         {
-            if (this->receive_object(val, 0) == true) //接收成功
+            if (this->receive_object(val, 0, len) == true) //接收成功
             {
                 msgRecvProcess(val);
+            }
+            else
+            {
+                if(len != EINTR)
+                    break;
             }
         }
     }
@@ -113,15 +119,21 @@ public:
     void run(void)
     {
         MSGDATA val;
+        int     len;
         while (this->running)
         {
-            if (this->receive_object(val, 0) == true) //接收成功
+            if (this->receive_object(val, 0, len) == true) //接收成功
             {
                 if (this->z_callbak != NULL) //执行操作
                 {
                     this->z_callbak(this->father, val);
                 }
 
+            }
+            else
+            {
+                if(len != EINTR)
+                    break;
             }
         }
     }

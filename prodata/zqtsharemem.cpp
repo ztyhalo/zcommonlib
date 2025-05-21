@@ -35,13 +35,33 @@ bool ZQTShareMem::destory(void)
                 zprintf1("remove error %d!\n", errno);
                 switch (errno) {
                 case EINVAL:
+                    m_createShm = 0;
                     return true;
                 default:
                     return false;
                 }
             }
+            m_createShm = 0;
+        }
 
-
+        if(m_createShm)
+        {
+            if(shmid_ds.shm_nattch != 0)
+            {
+                zprintf1("warning ZQTShareMem release error!\n");
+                shmid_ds.shm_nattch = 0;
+            }
+            if(-1 == shmctl(id, IPC_RMID, &shmid_ds))
+            {
+                zprintf1("ShareDataT detach IPC_RMID err!\n");
+                switch (errno) {
+                    case EINVAL:
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+            m_createShm = 0;
         }
     }
     // remove file
@@ -131,18 +151,32 @@ void* ZQTShareMem::createData(int size, const QString & keyid, AccessMode mode)
 {
     if(mode == Open)
     {
+        zprintf1("ZQTShareMem read key %s!\n", keyid.toStdString().c_str());
         if(readCreateData(size, keyid) == 0)
+        {
+            zprintf3("ZQTShareMem read key %s ok!\n", keyid.toStdString().c_str());
             return m_lhshare.data();
+        }
         else
+        {
+            zprintf1("ZQTShareMem read key %s error!\n", keyid.toStdString().c_str());
             return NULL;
+        }
     }
     else
     {
+        zprintf1("ZQTShareMem create key %s!\n", keyid.toStdString().c_str());
         m_shmKey = keyid;
         if (newcreateData(size) == 0)
+        {
+            zprintf3("ZQTShareMem create key %s ok!\n", keyid.toStdString().c_str());
             return m_lhshare.data();
+        }
         else
+        {
+            zprintf1("ZQTShareMem create key %s error!\n", keyid.toStdString().c_str());
             return NULL;
+        }
     }
 }
 

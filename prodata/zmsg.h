@@ -57,6 +57,7 @@ class Z_Msg
             }
             m_created = 0;
         }
+        zprintf3("Z_Msg destruct end!\n");
     }
 
     void msg_init(int key = 0, int type = 1)
@@ -84,7 +85,7 @@ class Z_Msg
     bool create_object(void);
     bool delete_object(void);
     bool send_object(MSGDATA data);
-    bool receive_object(MSGDATA& val, int mode);
+    bool receive_object(MSGDATA& val, int mode, int & size);
     bool receive_object(void *pdata, int *psize, int mode);
     int  GetMsgKey(void) const;
     bool send_object(MSGDATA data, int type);
@@ -94,7 +95,7 @@ class Z_Msg
 template < class MSGDATA >
 bool Z_Msg< MSGDATA >::create_object(void)
 {
-    zprintf3("Z_Msg create_object1!\n");
+    zprintf3("Z_Msg create_object1 key %d!\n", m_msgKey);
     m_msgId = msgget(m_msgKey, 0666 | IPC_CREAT | IPC_EXCL);
 
     if (-1 == m_msgId)
@@ -191,20 +192,22 @@ bool Z_Msg< MSGDATA >::send_object(void * pdata, int size, int type)
 
 
 template < class MSGDATA >
-bool Z_Msg< MSGDATA >::receive_object(MSGDATA & val, int mode)
+bool Z_Msg< MSGDATA >::receive_object(MSGDATA & val, int mode, int & size)
 {
     int len;
 
     len = msgrcv(m_msgId, &m_msgDta, sizeof(MSGDATA), m_msgType, mode);
     if (len == -1)
     {
-        struct msqid_ds info;
-        zprintf1("Z_Msg receive object error!\n");
-        msgctl(m_msgId, IPC_STAT, &info);
-        zprintf1("接收失败 read-write:%03o,cbytes=%lu,qnum=%lu,qbytes =%lu\n",
-                    info.msg_perm.mode&777, (ulong)info.__msg_cbytes,(ulong)info.msg_qnum,(ulong)info.msg_qbytes);
+        // struct msqid_ds info;
+        zprintf1("Z_Msg receive object error %d!\n", errno);
+        size = errno;
+        // msgctl(m_msgId, IPC_STAT, &info);
+        // zprintf1("接收失败 read-write:%03o,cbytes=%lu,qnum=%lu,qbytes =%lu\n",
+        //             info.msg_perm.mode&777, (ulong)info.__msg_cbytes,(ulong)info.msg_qnum,(ulong)info.msg_qbytes);
         return false;
     }
+    size = len;
     val = m_msgDta.val;
     return true;
 }

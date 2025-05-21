@@ -34,6 +34,7 @@ public:
         }
         if(m_createShm)
         {
+            zprintf3("ZQTShareMem create release!\n");
             destory();
             m_createShm = false;
         }
