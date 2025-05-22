@@ -69,7 +69,7 @@ class MsgRevClass : public Z_Msg< MSGDATA >, public MUTEX_CLASS, public Pth_Clas
         {
             if (this->receive_object(val, 0, len) == true) //接收成功
             {
-                msgRecvProcess(val);
+                msgRecvProcess(val, len);
             }
             else
             {
@@ -78,64 +78,39 @@ class MsgRevClass : public Z_Msg< MSGDATA >, public MUTEX_CLASS, public Pth_Clas
             }
         }
     }
-    virtual void msgRecvProcess(MSGDATA val)
+    virtual void msgRecvProcess(MSGDATA val, int len)
     {
         Q_UNUSED(val);
+        (void)len;
         zprintf3("receive sem!\n");
     }
 };
 
 template < class MSGDATA, class F = void >
-class MsgRevBackClass : public Z_Msg< MSGDATA >, public MUTEX_CLASS, public Call_B_T<MSGDATA, F>
+class MsgRevBackClass : public CallBack_T<MSGDATA, F>, public MsgRevClass<MSGDATA>
 {
 public:
-    MsgRevBackClass(int key = 0, int type = 1)
+    MsgRevBackClass(int key = 0, int type = 1):MsgRevClass<MSGDATA>(key, type)
     {
-        this->msg_init(key, type);
-        if(key > 0)
-        {
-            if(!this->create_object())
-            {
-                zprintf1("MsgRevBackClass create object fail!\n");
-            }
-        }
-
+        ;
     }
     virtual ~MsgRevBackClass()
     {
         zprintf3("MsgRevBackClass destruct!\n");
-        if(this->running)
-        {
-            this->running = 0;
-            this->releaseMsg();
-            this->waitEnd();
-        }
     }
-    void msgRecvStart(void)
-    {
-        this->start("Msgrevbackclass");
-    }
-    // template < class DTYPE, int N, class F >
-    void run(void)
-    {
-        MSGDATA val;
-        int     len;
-        while (this->running)
-        {
-            if (this->receive_object(val, 0, len) == true) //接收成功
-            {
-                if (this->z_callbak != NULL) //执行操作
-                {
-                    this->z_callbak(this->father, val);
-                }
 
-            }
-            else
-            {
-                if(len != EINTR)
-                    break;
-            }
+    void msgRecvProcess(MSGDATA val, int len) override
+    {
+        if (this->m_callbak != NULL) //执行操作
+        {
+            this->m_callbak(this->m_father, val, len);
         }
+    }
+    int msgPthreadInit(int (*callback)(F* pro, MSGDATA, int), F* arg, const string & pthName="")
+    {
+        this->set_z_callback(callback, arg);
+        this->start(pthName);
+        return 0;
     }
 };
 

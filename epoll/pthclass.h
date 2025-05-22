@@ -45,6 +45,43 @@ public:
 
 };
 
+//修改添加单独的callback类，并添加数据长度
+template < class DTYPE, class F >
+class CallBack_T
+{
+  public:
+    F* m_father;
+
+  public:
+    CallBack_T():m_father(NULL),m_callbak(NULL)
+    {
+        ;
+    }
+    virtual ~CallBack_T()
+    {
+        zprintf3("destory CallBack_T!\n");
+    }
+
+    int (*m_callbak)(F* pro, DTYPE val,int len);
+
+    int set_z_callback(int (*callback)(F* pro, DTYPE, int), F* arg);
+
+};
+
+template < class DTYPE, class F >
+int CallBack_T< DTYPE, F >::set_z_callback(int (*callback)(F* pro, DTYPE, int), F* arg)
+{
+    if (callback != NULL)
+    {
+        m_callbak = callback;
+        m_father    = arg;
+        return 0;
+    }
+    return -1;
+}
+
+
+
 //线程回调类
 template < class DTYPE, class F >
 class Call_B_T : public Pth_Class
