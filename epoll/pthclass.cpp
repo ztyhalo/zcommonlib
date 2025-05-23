@@ -38,21 +38,24 @@ int Pth_Class::start(const string & name)
 {
     if(m_pid == 0)
     {
-        if(pthread_create(&m_pid, NULL, start_thread,this) != 0)
-        {
-            zprintf1("creat pthread failed!\n");
-            return -1;
-        }
-        else
+        if(pthread_create(&m_pid, NULL, start_thread,this) == 0)
         {
             running = 1;
             m_name = name;
             zprintf3("zty create pid %d name %s!\n", (int)m_pid, name.c_str());
             return 0;
         }
+        else
+        {
+            zprintf1("creat pthread failed!\n");
+            return -1;
+        }
     }
-    zprintf1("pid %d have creat\n",(int)m_pid);
-    return -1;
+    else
+    {
+        zprintf1("pid %d have creat\n",(int)m_pid);
+        return -1;
+    }
 }
 
 int Pth_Class::stop()

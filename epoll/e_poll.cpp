@@ -16,23 +16,31 @@
 z_poll::z_poll(int max_num):m_epSize(max_num)
 {
     m_epFd = epoll_create(max_num);
-    if(m_epFd == -1)
+    if(m_epFd != -1)
+    {
+        m_eventFd = eventfd(0, EFD_NONBLOCK);
+        if(m_eventFd != -1)
+        {
+            if(e_poll_add_lt(m_eventFd) != 0)
+            {
+                close(m_eventFd);
+                m_eventFd = -1;
+            }
+            m_active = 1;
+        }
+        else
+        {
+            zprintf1("z_poll faile create eventfd!\n");
+        }
+    }
+    else
     {
         zprintf1("epoll creat failed!\n");
         m_active = 0;
         return;
     }
-    m_eventFd = eventfd(0, EFD_NONBLOCK);
-    if(m_eventFd == -1)
-    {
-        zprintf1("z_poll faile create eventfd!\n");
-    }
-    else if(e_poll_add_lt(m_eventFd) != 0)
-    {
-        close(m_eventFd);
-        m_eventFd = -1;
-    }
-    m_active = 1;
+
+
 }
 
 int z_poll::e_poll_add(int fd)
@@ -45,12 +53,13 @@ int z_poll::e_poll_add(int fd)
     ev.data.fd = fd;
     ev.events = EPOLLIN | EPOLLET;
     err = epoll_ctl(m_epFd, EPOLL_CTL_ADD, fd, &ev);
-    if(err == -1)
+    if(err != -1)
+        return 0;
+    else
     {
         zprintf1("%s\n",strerror(errno));
         return err;
     }
-    return 0;
 }
 
 int z_poll::e_poll_add_lt(int fd)
@@ -63,12 +72,13 @@ int z_poll::e_poll_add_lt(int fd)
     ev.data.fd = fd;
     ev.events  = EPOLLIN;
     err        = epoll_ctl(m_epFd, EPOLL_CTL_ADD, fd, &ev);
-    if(err == -1)
+    if(err != -1)
+        return 0;
+    else
     {
         zprintf1("%s\n", strerror(errno));
         return err;
     }
-    return 0;
 }
 
 int z_poll::e_poll_del(int fd)
@@ -77,13 +87,13 @@ int z_poll::e_poll_del(int fd)
     ev.data.fd = fd;
     ev.events = EPOLLIN | EPOLLET;
     int err = epoll_ctl(m_epFd, EPOLL_CTL_DEL, fd, &ev);
-    if(err == -1)
+    if(err != -1)
+        return 0;
+    else
     {
         zprintf1("%s\n",strerror(errno));
         return err;
     }
-
-    return 0;
 }
 
 int z_poll::e_poll_del_lt(int fd)
@@ -92,13 +102,14 @@ int z_poll::e_poll_del_lt(int fd)
     ev.data.fd = fd;
     ev.events  = EPOLLIN;
     int err    = epoll_ctl(m_epFd, EPOLL_CTL_DEL, fd, &ev);
-    if(err == -1)
+    if(err != -1)
+        return 0;
+    else
     {
         zprintf1("epoll_ctl error %s\n", strerror(errno));
         return err;
     }
 
-    return 0;
 }
 
 int z_poll::e_poll_deactive()
@@ -127,13 +138,14 @@ bool z_poll::setNonBlock (int fd)
 {
      int flags = fcntl (fd, F_GETFL, 0);
      flags |= O_NONBLOCK;
-     if (-1 == fcntl (fd, F_SETFL, flags))
+     if (-1 != fcntl (fd, F_SETFL, flags))
+         return true;
+     else
      {
          zprintf1("fd%d set non block failed!\n", fd);
          return false;
      }
 
-     return true;
 }
 
 int z_poll::wait_fd_change(int time)

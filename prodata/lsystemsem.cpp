@@ -183,7 +183,9 @@ LSystemSem::SemOpTimeState LSystemSem::modifySemaphore(int count, int ms)
     int res;
     // res = semtimedop(m_semId, &operation, 1, &timeout);
     EINTR_LOOP(res, semtimedop(m_semId, &operation, 1, &timeout));
-    if( -1 == res)
+    if( -1 != res)
+        return Pok;
+    else
     {
         if(errno == EINVAL || errno == EIDRM)
         {
@@ -197,7 +199,6 @@ LSystemSem::SemOpTimeState LSystemSem::modifySemaphore(int count, int ms)
         zprintf1("semop m_semId %d error!\n", m_semId);
         return PError;
     }
-    return Pok;
 }
 
 
