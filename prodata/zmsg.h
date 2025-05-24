@@ -38,9 +38,10 @@ class Z_Msg
     {
         if (key != 0)
         {
-            create_object();
-            struct msqid_ds info;
-            msgctl(m_msgId, IPC_STAT, &info);
+            // create_object();
+            get_msg();
+            // struct msqid_ds info;
+            // msgctl(m_msgId, IPC_STAT, &info);
             // memset(&m_msgDta, 0x00, sizeof(ZMSG));
             m_msgDta.type = 1;
         }

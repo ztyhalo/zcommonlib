@@ -11,7 +11,7 @@
 #include "zmsg.h"
 // #include "e_poll.h"
 #include "pthclass.h"
-#include "mutex_class.h"
+// #include "mutex_class.h"
 
 using namespace std;
 
@@ -30,7 +30,7 @@ class MsgSendClass : public Z_Msg< MSGDATA >
 };
 
 template < class MSGDATA >
-class MsgRevClass : public Z_Msg< MSGDATA >, public MUTEX_CLASS, public Pth_Class
+class MsgRevClass : public Z_Msg< MSGDATA >,public Pth_Class
 {
 
   public:
