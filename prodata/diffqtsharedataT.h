@@ -28,7 +28,7 @@ class DiffQTShareDataT : public QTShareDataT< T >
     // int  create_data(int size);
     int  creat_data(int size, const QString & keyid, int unitsize);
 
-    void set_data(int add, const T & val) override;
+    void set_data(int add, const T & val);
     // void set_data(T* add, T val);
     // T    get_data(uint add);
     // int  get_data(uint add, T& val);

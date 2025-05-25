@@ -43,8 +43,9 @@ class Z_Msg
             // struct msqid_ds info;
             // msgctl(m_msgId, IPC_STAT, &info);
             // memset(&m_msgDta, 0x00, sizeof(ZMSG));
-            m_msgDta.type = 1;
+
         }
+        m_msgDta.type = type;
     }
 
     virtual ~Z_Msg()
