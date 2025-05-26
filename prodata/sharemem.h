@@ -33,7 +33,8 @@ public:
         zprintf3("ShareDataT destruct\n");
     }
 
-    int creat_data(int size, key_t id);
+    int shareCreateData(int size, key_t id, AccessMode mode);
+    int create_data(int size, key_t id);
     int read_creat_data(key_t id, int size = 0);
 
     bool dateLock(void) override;
@@ -42,7 +43,7 @@ public:
 
 
 template < class T >
-int ShareDataT< T >::creat_data(int size, key_t id)
+int ShareDataT< T >::create_data(int size, key_t id)
 {
     m_shmKey = id;
     if(createData(size) == 0)
@@ -69,6 +70,18 @@ int ShareDataT< T >::read_creat_data(key_t id, int size)
     zprintf1("ShareDataT read create keyid %d error!\n", id);
     return -1;
 }
+
+template < class T >
+int ShareDataT< T >::shareCreateData(int size, key_t id, AccessMode mode)
+{
+    if(mode == Open)
+    {
+        return read_creat_data(id, size);
+    }
+    else
+        return create_data(size, id);
+}
+
 template < class T >
 bool ShareDataT< T >::dateLock(void)
 {

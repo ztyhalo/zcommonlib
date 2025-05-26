@@ -64,6 +64,7 @@ int LSystemSem::handle(AccessMode mode)
             return -1;
         }
     }
+    zprintf3("LSystemSem create key 0x%x:%d id 0x%x:%d!\n",m_semKey,m_semKey, m_semId,m_semId);
 
     return 0;
 }

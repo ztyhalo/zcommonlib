@@ -14,6 +14,7 @@ class ZSysShm:public ZSysShmBase
   public:
 
     key_t       m_shmKey;
+    int         m_shmId;
     ZSystemSem  m_sysSem;
 
   public:
@@ -21,6 +22,7 @@ class ZSysShm:public ZSysShmBase
     virtual ~ZSysShm();
 
     bool init_key();
+    void setKey(key_t key);
     bool semLock() override;
     bool semUnlock() override;
 

@@ -24,7 +24,12 @@ using namespace  std;
 template < class T >
 class Sem_Share_Data : public ShareDataT< T >,public ZSharememRW
 {
-
+public:
+    // enum AccessMode
+    // {
+    //     Open,
+    //     Create
+    // };
   public:
     Sem_Share_Data()
     {
@@ -32,7 +37,7 @@ class Sem_Share_Data : public ShareDataT< T >,public ZSharememRW
     }
     explicit Sem_Share_Data(uint size, key_t semkey = 19860610, key_t sharekey = 20130410)
     {
-        creat_sem_data(size, semkey, sharekey);
+        creat_sem_data(size, semkey, sharekey, ZSysShmBase::Open);
     }
     virtual ~Sem_Share_Data()
     {
@@ -40,25 +45,25 @@ class Sem_Share_Data : public ShareDataT< T >,public ZSharememRW
 
     }
 
-    int creat_sem_data(uint size, key_t semkey = 19860610, key_t sharekey = 20130410);
+    int creat_sem_data(uint size, key_t semkey, key_t sharekey , ZSysShmBase::AccessMode mode);
     int write_send_data(const T & val);
     int read_send_data(T& val);
 };
 
 template < class T >
-int Sem_Share_Data< T >::creat_sem_data(uint size, key_t semkey, key_t sharekey)
+int Sem_Share_Data< T >::creat_sem_data(uint size, key_t semkey, key_t sharekey, ZSysShmBase::AccessMode mode)
 {
     int   err  = 0;
     int* midp = NULL;
 
-    zprintf3("share key is %d\n", sharekey);
+    zprintf3("share key is %d sem key 0x%x:%d\n", sharekey, semkey, semkey);
     cleanHandle();
 
     int aline = Z_MEM_ALIGEN_SIZE(size, 4);
     int alinesize = Z_MEM_ALIGEN_SIZE(aline + sizeof(int) * 3, 4);
 
 
-    err     = this->creat_data(alinesize, sharekey);
+    err     = this->shareCreateData(alinesize, sharekey, mode);
     m_bufSize = size / sizeof(T);
     if (err == 0)
     {
@@ -73,7 +78,7 @@ int Sem_Share_Data< T >::creat_sem_data(uint size, key_t semkey, key_t sharekey)
         *m_pWr = 0;
         *m_pSize = 0;
 
-        if(m_sem.setKey(semkey, 0, LSystemSem::Create) != 0)
+        if(m_sem.setKey(semkey, 0,  (LSystemSem::AccessMode)mode) != 0)
         {
             zprintf1("Sem_Qt_Data create_sem %d error !\n",semkey);
             err = -2;

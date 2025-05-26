@@ -5,7 +5,7 @@
 
 
 
-ZSysShm::ZSysShm():m_shmKey(0) //,m_memory(0),m_size(0),m_state(SHMOK),m_createShm(0)
+ZSysShm::ZSysShm():m_shmKey(0),m_shmId(-1) //,m_memory(0),m_size(0),m_state(SHMOK),m_createShm(0)
 {
     ;
 }
@@ -20,6 +20,19 @@ ZSysShm::~ZSysShm()
     // this->m_data = NULL;
 }
 
+void ZSysShm::setKey(key_t key)
+{
+    if(key == m_shmKey && m_shmId != -1)
+    {
+        zprintf1("zsysshm key 0x%x:%d shmid 0x%x:%d is seted!\n", key, key, m_shmId,m_shmId);
+        return;
+    }
+    if(isAttached())
+        detach();
+    clean_handle();
+    m_shmKey = key;
+    m_shmId = -1;
+}
 
 bool ZSysShm::init_key()
 {
@@ -100,15 +113,15 @@ bool ZSysShm::create(int size)
 
 bool ZSysShm::attach(AccessMode mode)
 {
-    int   shmid = shmget(m_shmKey, 0, (mode == Open ? 0400 : 0600));
+    m_shmId = shmget(m_shmKey, 0, (mode == Open ? 0400 : 0600));
     int   size;
-    if(-1 == shmid)
+    if(-1 == m_shmId)
     {
         zprintf1("ShareDataT m_shmKey %d attach error!\n", m_shmKey);
         return false;
     }
 
-    m_memory = shmat(shmid, 0, (mode == Create ? SHM_RDONLY : 0));
+    m_memory = shmat(m_shmId, 0, (mode == Open ? SHM_RDONLY : 0));
     if ((void*) - 1 == m_memory) {
         m_memory = 0;
         zprintf1("share data ::attach (shmat) error!\n");
@@ -116,7 +129,7 @@ bool ZSysShm::attach(AccessMode mode)
     }
 
     shmid_ds shmid_ds;
-    if (!shmctl(shmid, IPC_STAT, &shmid_ds)) {
+    if (!shmctl(m_shmId, IPC_STAT, &shmid_ds)) {
         size = (int)shmid_ds.shm_segsz;
     } else {
         zprintf1("share data::attach (shmctl) error!\n");
@@ -214,7 +227,11 @@ int ZSysShm::createData(int size)
         zprintf1("sharedatat creat data init key err!\n");
         return -1;
     }
-    m_sysSem.setKey(std::to_string(m_shmKey), 1, ZSystemSem::Create);
+    if(m_sysSem.setKey(std::to_string(m_shmKey), 1, ZSystemSem::Create) < 0)
+    {
+        zprintf1("ZSysShm setKey %d error!\n", m_shmKey);
+        return -2;
+    }
 
     ZLockerClass<ZSysShm> locker(this);
     locker.lock();
@@ -240,24 +257,29 @@ int ZSysShm::createData(int size, key_t id)
 
 int ZSysShm::readCreateData(key_t id, int size)
 {
-
+    m_shmKey = id;
+    if(!init_key())
+    {
+        zprintf1("ZSysShm readCreateData init key err!\n");
+        return -1;
+    }
     ZLockerClass<ZSysShm> locker(this);
     locker.lock();
 
-    if(0 != m_shmKey)
-    {
-        zprintf1("ShareDataT read_creat_data m_shm_key %d is have!\n", m_shmKey);
-        return -1;
-    }
+    // if(0 != m_shmKey)
+    // {
+    //     zprintf1("ShareDataT read_creat_data m_shm_key %d is have!\n", m_shmKey);
+    //     return -1;
+    // }
 
-    m_shmKey = id;
+
     this->m_size = size;
     if(!attach())
     {
-        zprintf1("ShareDataT read_creat_data attach err!\n");
+        zprintf1("ZSysShm read_creat_data attach err!\n");
         return -2;
     }
-
+    zprintf2("ZSysShm read_creat_data id 0x%x:%d size %d ok!\n", id,id, size);
     return 0;
 }
 
