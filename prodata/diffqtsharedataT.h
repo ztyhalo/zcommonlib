@@ -27,6 +27,7 @@ class DiffQTShareDataT : public QTShareDataT< T >
     }
     // int  create_data(int size);
     int  creat_data(int size, const QString & keyid, int unitsize);
+    int readCreateData(int size, const QString & keyid, int unitsize);
 
     void set_data(int add, const T & val);
     // void set_data(T* add, T val);
@@ -122,6 +123,7 @@ template < class T >
 int DiffQTShareDataT< T >::creat_data(int size, const QString & keyid, int unitsize)
 {
     // shm_key       = keyid;
+
     m_unitsize    = unitsize;
     int unitcount = size / unitsize;
     // unitcount为8的倍数，不满足补齐
@@ -136,7 +138,54 @@ int DiffQTShareDataT< T >::creat_data(int size, const QString & keyid, int units
     m_tSize = size/sizeof(T);
     m_exsize    = size + unitcount;
     m_dirtySize = unitcount;
-    return this->create_data(m_exsize, keyid);
+
+    if(this->create_data(m_exsize, keyid) == 0)
+    {
+        m_dirtyData = (this->m_data + size);
+        return 0;
+    }
+    else
+    {
+        zprintf1("DiffQTShareDataT create %s error!\n", keyid.toStdString().c_str());
+        return -1;
+    }
+
+    // return this->create_data(m_exsize, keyid);
+    // return this->read_creat_data(m_exsize, keyid);
+}
+
+template < class T >
+int DiffQTShareDataT< T >::readCreateData(int size, const QString & keyid, int unitsize)
+{
+    // shm_key       = keyid;
+    m_unitsize    = unitsize;
+    int unitcount = size / unitsize;
+    // unitcount为8的倍数，不满足补齐
+    if (unitcount % 8 != 0)
+    {
+        unitcount = unitcount / 8 + 1;
+    }
+    else
+    {
+        unitcount = unitcount / 8;
+    }
+    m_tSize = size/sizeof(T);
+    m_exsize    = size + unitcount;
+    m_dirtySize = unitcount;
+
+    if(this->read_creat_data(m_exsize, keyid) == 0)
+    {
+        m_dirtyData = (this->m_data + size);
+        return 0;
+    }
+    else
+    {
+        zprintf1("DiffQTShareDataT read_creat_data %s error!\n", keyid.toStdString().c_str());
+        return -1;
+    }
+
+    // return this->create_data(m_exsize, keyid);
+    // return this->read_creat_data(m_exsize, keyid);
 }
 
 template < class T >
