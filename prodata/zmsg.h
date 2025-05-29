@@ -14,6 +14,7 @@
 #include <errno.h>
 #include <sys/msg.h>
 #include "zprint.h"
+#include "timers.h"
 
 using namespace std;
 
@@ -54,7 +55,7 @@ class Z_Msg
         {
             if (-1 != m_msgId)
             {
-                zprintf3("Z_Msg destruct!\n");
+                zprintf1("Z_Msg destruct msgid %d m_msgKey %d!\n", m_msgId, m_msgKey);
                 delete_object();
             }
             m_created = 0;
@@ -74,7 +75,7 @@ class Z_Msg
 
         if (m_msgId >= 0)
         {
-            zprintf3("get success!\n");
+            zprintf3("get %d success id %d!\n", m_msgKey, m_msgId);
             return true;
         }
         else
@@ -96,6 +97,7 @@ class Z_Msg
     int  GetMsgKey(void) const;
     bool send_object(MSGDATA data, int type);
     bool send_object(void * pdata, int size, int type = 1);
+    bool msgReceiveObject(MSGDATA & val, int & size, int timeover);
 };
 
 template < class MSGDATA >
@@ -228,8 +230,44 @@ bool Z_Msg< MSGDATA >::receive_object(MSGDATA & val, int mode, int & size)
         //             info.msg_perm.mode&777, (ulong)info.__msg_cbytes,(ulong)info.msg_qnum,(ulong)info.msg_qbytes);
         return false;
     }
+}
+
+template < class MSGDATA >
+bool Z_Msg< MSGDATA >::msgReceiveObject(MSGDATA & val, int & size, int timeout)
+{
+
+    if(timeout > 0)
+    {
+        time_t start = time(NULL);
+        while(time(NULL) -  start < timeout)
+        {
+            int len = msgrcv(m_msgId, &m_msgDta, sizeof(MSGDATA), m_msgType, IPC_NOWAIT);
+            if (len != -1)
+            {
+                size = len;
+                val = m_msgDta.val;
+                return true;
+            }
+            else if(errno != ENOMSG)
+            {
+                zprintf1("Z_Msg receive object error %d!\n", errno);
+                size = errno;
+                return false;
+            }
+            USLEEP(100000);
+        }
+        zprintf1("msgId %d recevie timeover %d!\n", m_msgId, timeout);
+        size = -3;
+        return false;
+    }
+    else
+    {
+        return receive_object(val, 0, size);
+    }
 
 }
+
+
 template < class MSGDATA >
 bool Z_Msg< MSGDATA >::receive_object(void *pdata,int *psize,int mode)
 {

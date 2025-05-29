@@ -111,7 +111,7 @@ extern PRINTF_CLASS * debug_p;
 
 
 
-#define PRINT_PRO      4
+#define PRINT_PRO      3
 
 #if PRINT_PRO >=1
 #define zprintf1 debug_p->timemsprintf
