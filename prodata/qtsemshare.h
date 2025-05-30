@@ -43,7 +43,6 @@ class Sem_Qt_Data : public QTShareDataT< T >,public ZSharememRW
     int write_send_data(const T & val);
     int read_send_data(T& val);
     int a8_read_send_data(T& val);
-    // int wait_thread_sem(void);
 };
 
 template < class T >
@@ -71,7 +70,7 @@ int Sem_Qt_Data< T >::creat_sem_data(int size, key_t semkey, const QString & sha
         midp      += aline/4;
         m_pRd  = midp;
         m_pWr  = midp + 1;
-        m_pSize  = midp + 1;
+        m_pSize  = midp + 2;
         *m_pRd = 0;
         *m_pWr = 0;
         *m_pSize = 0;
@@ -95,6 +94,7 @@ int Sem_Qt_Data< T >::write_send_data(const T & val)
 {
     ZLockerClass<Sem_Qt_Data< T >> locker(this);
     locker.lock();
+
     int count = *m_pSize;
     if(count >= m_bufSize)
     {
@@ -110,8 +110,6 @@ int Sem_Qt_Data< T >::write_send_data(const T & val)
     *m_pWr = mid;
     count++;
     *m_pSize = count;
-
-    // sem_v(m_semId);
     m_sem.release(1);
     return 0;
 }
@@ -121,6 +119,7 @@ int Sem_Qt_Data< T >::read_send_data(T & val)
 {
     ZLockerClass<Sem_Qt_Data< T >> locker(this);
     locker.lock();
+
 
     int count = *m_pSize;
     if(count <= 0)
@@ -134,7 +133,9 @@ int Sem_Qt_Data< T >::read_send_data(T & val)
 
     mid++;
     mid %= m_bufSize;
+
     *m_pRd = mid;
+
     count--;
     *m_pSize = count;
 

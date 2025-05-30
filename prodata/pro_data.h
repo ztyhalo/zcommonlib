@@ -86,7 +86,7 @@ void creatdata< T >::set_data(uint add, const T & val)
 {
     if (add >= m_size / sizeof(T))
     {
-        zprintf1("set data off\n");
+        zprintf1("creatdata set data off\n");
         return;
     }
     // data[add] = val;

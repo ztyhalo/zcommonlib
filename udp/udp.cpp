@@ -45,7 +45,9 @@ int UDP_CLASS::udp_read_init(void)
         zprintf1("zty read rev buf size error!\n");
     }
     else
+    {
         zprintf4("zty read rev buf size %d!\n", nRecvBuf);
+    }
 
 
 

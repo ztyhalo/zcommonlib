@@ -28,7 +28,7 @@ public:
     int  get_data(const T* addr, T& val);
     int  get_data(int addr, void * dest, int size);
     int  noblock_set_data(int add, T val);
-    T    noblock_get_data(int add);
+    // T    noblock_get_data(int add);
     int  noblock_get_data(int add, T& val);
     virtual bool dateLock(void) = 0;
     virtual bool  dateUnlock(void) = 0;
@@ -41,7 +41,7 @@ int ShareDataProcessT< T >::set_data(int add, const T & val)
 {
     if (add >= m_classSize)
     {
-        zprintf1("set data off\n");
+        zprintf1("ShareDataProcessT set data off add %d m_classSize %d\n",add, m_classSize);
         return -1;
     }
     dateLock();
@@ -55,7 +55,7 @@ int ShareDataProcessT< T >::set_data(T* addr,  T  val)
 {
     if ((addr - this->m_data) >= m_classSize)
     {
-        zprintf1("set data off\n");
+        zprintf1("ShareDataProcessT set data off m_classSize %d\n", m_classSize);
         return -1;
     }
     dateLock();
@@ -162,25 +162,25 @@ int ShareDataProcessT< T >::noblock_set_data(int add, T val)
 {
     if (add >= m_classSize)
     {
-        zprintf1("set data off\n");
+        zprintf1("ShareDataProcessT noblock set data off add %d m_classSize %d\n", add, m_classSize);
         return -1;
     }
     memcpy(this->m_data + add, &val, sizeof(T));
     return 0;
 }
 
-template < class T >
-T ShareDataProcessT< T >::noblock_get_data(int add)
-{
-    if (add >= m_classSize)
-    {
-        zprintf1("get data off\n");
-        return *this->m_data;
-    }
-    T mid;
-    mid = *(this->m_data + add);
-    return mid;
-}
+// template < class T >
+// T ShareDataProcessT< T >::noblock_get_data(int add)
+// {
+//     if (add >= m_classSize)
+//     {
+//         zprintf1("get data off\n");
+//         return *this->m_data;
+//     }
+//     T mid;
+//     mid = *(this->m_data + add);
+//     return mid;
+// }
 
 template < class T >
 int ShareDataProcessT< T >::noblock_get_data(int add, T & val)

@@ -133,8 +133,6 @@ bool Z_Msg< MSGDATA >::delete_object(void)
     m_msgId = -1;
     return true;
 }
-
-
 template < class MSGDATA >
 bool Z_Msg< MSGDATA >::send_object(MSGDATA data)
 {
@@ -164,7 +162,7 @@ bool Z_Msg< MSGDATA >::send_object(MSGDATA data, int type)
 
     if (msgsnd(m_msgId, &m_msgDta, sizeof(MSGDATA), IPC_NOWAIT) != -1)
     {
-        zprintf3("send success!\n");
+        zprintf4("send success!\n");
         return true;
     }
     else
@@ -191,7 +189,7 @@ bool Z_Msg< MSGDATA >::send_object(void * pdata, int size, int type)
 
     if (msgsnd(m_msgId, &m_msgDta, size, IPC_NOWAIT) != -1)
     {
-        zprintf3("send success!\n");
+        zprintf4("send success!\n");
         return true;
     }
     else
