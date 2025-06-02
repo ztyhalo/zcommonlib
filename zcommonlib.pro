@@ -54,10 +54,12 @@ SOURCES += \
     tcp/tcp_client.cpp \
     timer/timers.cpp \
     udp/udp.cpp \
+    zprint/cprintfclass.cpp \
     zprint/netprint.cpp \
     zprint/zprint.cpp
 
 HEADERS += \
+    bufmodel/TwoBufPthT.h \
     bufmodel/ZBufModel.h \
     date/com_date.h \
     epoll/e_poll.h \
@@ -94,6 +96,7 @@ HEADERS += \
     tcp/tcp_client.h \
     timer/timers.h \
     udp/udp.h \
+    zprint/cprintfclass.h \
     zprint/netprint.h \
     zprint/version.h \
     zprint/zprint.h
