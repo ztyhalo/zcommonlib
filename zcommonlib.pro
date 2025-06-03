@@ -56,6 +56,7 @@ SOURCES += \
     udp/udp.cpp \
     zprint/cprintfclass.cpp \
     zprint/netprint.cpp \
+    zprint/printfclass.cpp \
     zprint/zprint.cpp
 
 HEADERS += \
@@ -98,6 +99,8 @@ HEADERS += \
     udp/udp.h \
     zprint/cprintfclass.h \
     zprint/netprint.h \
+    zprint/printfclass.h \
+    zprint/printfconf.h \
     zprint/version.h \
     zprint/zprint.h
 

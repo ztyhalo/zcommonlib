@@ -1,18 +1,21 @@
 #ifndef __ZPRINT_H__
 #define __ZPRINT_H__
 
-#include <string>
 #include <stdio.h>
 #include <unistd.h>
 
 #include <string.h>
 #include <time.h>
 #include <sys/time.h>
-// #include "mutex_class.h"
+#include "printfconf.h"
+#include "printfclass.h"
+#include "cprintfclass.h"
 
-using namespace std;
 
-#define DEBUG_F_DIR "/media/mmcblk0p1/debug"
+
+extern PrintfClass * g_debugP;
+extern CPrintfClass *g_pCprintf;
+
 
 #define timeprf(...) do { time_t now;\
                         struct tm timenow;\
@@ -34,113 +37,64 @@ using namespace std;
            p->tm_hour, p->tm_min, p->tm_sec, tv.tv_usec);\
     printf( __VA_ARGS__);}while(0)
 
-class PRINTF_CLASS
-{
-private:
-    FILE * m_pfd;
-    int    m_mark;
-    int    m_level;
-    pthread_mutex_t m_printMut;
-    PRINTF_CLASS();
+#define PRINTMODE 2
+#if PRINTMODE == 1
+    #if PRINT_PRO >=1
+    #define zprintf1 g_debugP->timemsprintf
+    #else
+    #define zprintf1(...)
+    #endif
 
+    #if PRINT_PRO >=2
+    #define zprintf2 g_debugP->timeprintf
+    #else
+    #define zprintf2(...)
+    #endif
 
-public:
+    #if PRINT_PRO >=3
+    #define zprintf3 g_debugP->zprintf
+    #else
+    #define zprintf3(...)
+    #endif
 
-    ~PRINTF_CLASS()
-    {
-        printf("destory PRINTF_CLASS!\n");
-        if(m_pfd != stdout && m_pfd != NULL)
-        {
-            fflush(m_pfd);
-            // int fd = fileno(m_pfd);
+    #if PRINT_PRO >=4
+    #define zprintf4 g_debugP->hprintf
+    #else
+    #define zprintf4(...)
+    #endif
 
-            // fsync(fd);
-            fclose(m_pfd);
-            m_pfd = NULL;
-            int ret = pthread_mutex_destroy(&m_printMut);
-            if (ret != 0) {
-                // 错误处理
-                if (ret == EBUSY) {
-                    printf("mutex busy!");
-                } else if (ret == EINVAL) {
-                    printf("mutex invalid!\n");
-                }
-            }
-        }
-        printf("PRINTF_CLASS destruct end!\n");
-    }
-    bool lock();
-    bool unlock();
-    void printf_class_init(const string & dir, const string & name="");
-    static PRINTF_CLASS * getInstance(void);
-    void printf_init(const char * name, int fd);
-    void zprintf(const char * format, ...);
-    void timeprintf(const char * format, ...);
-    void timemsprintf(const char * format, ...);
-    void hprintf(const char * format, ...);
-
-private:
-    static PRINTF_CLASS * m_pSelf;
-
-
-};
-
-//class PRINTF_INSTANCE:public PRINTF_CLASS
-//{
-//private:
-
-//     PRINTF_INSTANCE(char * name = NULL, int fd = 1):PRINTF_CLASS(name,fd)
-//     {
-//         ;
-//     }
-
-//public:
-//    static PRINTF_INSTANCE * get_printf_instance(void)
-//    {
-//        static PRINTF_INSTANCE gPrintf;
-//        return &gPrintf;
-//    }
-//    ~PRINTF_INSTANCE()
-//    {
-//        ;
-//    }
-
-//};
-
-extern PRINTF_CLASS * debug_p;
-
-
-
-#define PRINT_PRO      3
-
-#if PRINT_PRO >=1
-#define zprintf1 debug_p->timemsprintf
+    #ifndef prop_printf
+    #define prop_printf(...)
+    #endif
 #else
-#define zprintf1(...)
-#endif
+    #if PRINT_PRO >=1
+    #define zprintf1 g_pCprintf->timemsprintf
+    #else
+    #define zprintf1(...)
+    #endif
 
-#if PRINT_PRO >=2
-#define zprintf2 debug_p->timeprintf
-#else
-#define zprintf2(...)
-#endif
+    #if PRINT_PRO >=2
+    #define zprintf2 g_pCprintf->timeprintf
+    #else
+    #define zprintf2(...)
+    #endif
 
-#if PRINT_PRO >=3
-#define zprintf3 debug_p->zprintf
-#else
-#define zprintf3(...)
-#endif
+    #if PRINT_PRO >=3
+    #define zprintf3 g_pCprintf->zprintf
+    #else
+    #define zprintf3(...)
+    #endif
 
-#if PRINT_PRO >=4
-#define zprintf4 debug_p->hprintf
-#else
-#define zprintf4(...)
-#endif
+    #if PRINT_PRO >=4
+    #define zprintf4 g_pCprintf->hprintf
+    #else
+    #define zprintf4(...)
+    #endif
 
-#ifndef prop_printf
-#define prop_printf(...)
-#endif
-
+    #ifndef prop_printf
+    #define prop_printf(...)
+    #endif
+#endif //PRINTMODE
 
 
 #endif //__ZPRINT_H__

@@ -10,7 +10,7 @@
 
 
 template<class DTYPE, int N = 2, int SIZE = 2048>
-class TwoBufT:public MUTEX_CLASS
+class TwoBufT //:public MUTEX_CLASS
 {
   public:
     DTYPE               m_buf[N][SIZE];
@@ -20,7 +20,7 @@ class TwoBufT:public MUTEX_CLASS
     int                 m_num;
     int                 m_maxNum;
     sem_t               m_sem;
-
+    MUTEX_CLASS         m_mutex;
 
 
   public:
@@ -44,7 +44,7 @@ class TwoBufT:public MUTEX_CLASS
 template<class DTYPE, int N, int SIZE>
 int TwoBufT<DTYPE, N, SIZE>::writeBufData(DTYPE * val, int num)
 {
-    lock_guard<MUTEX_CLASS> locker(this);
+    lock_guard<MUTEX_CLASS> locker(m_mutex);
     if(m_num >= N)
     {
         printf("Write buf over!\n");
@@ -76,7 +76,7 @@ int TwoBufT<DTYPE,N,SIZE>::readBufData(DTYPE * addr, int num)
 {
 
 
-    lock_guard<MUTEX_CLASS> locker(this);
+    lock_guard<MUTEX_CLASS> locker(m_mutex);
     if(m_num > 0 && addr != NULL)
     {
         int size = 0;
@@ -103,7 +103,7 @@ int TwoBufT<DTYPE,N,SIZE>::readBufData(DTYPE * addr, int num)
 
 //带线程回调的buf操作类
 template < class DTYPE, int N = 2, int SIZE = 2048, class F = void >
-class TwoBufPthT : public TwoBufT< DTYPE, N ,SIZE>, public Call_B_T< DTYPE, F >
+class TwoBufPthT : public TwoBufT< DTYPE, N ,SIZE>,public CallBackPoint_T<DTYPE, F>,public Pth_Class
 {
   public:
     TwoBufPthT()
@@ -131,11 +131,12 @@ void TwoBufPthT< DTYPE, N,  SIZE, F >::run(void)
         if (sem_wait(&this->m_sem)== 0)
         {
             DTYPE val[SIZE];
-            if (this->readBufData(val, SIZE) > 0)
+            int size = this->readBufData(val, SIZE);
+            if (size > 0)
             {
-                if (this->z_callbak != NULL) //执行操作
+                if (this->m_callbak != NULL) //执行操作
                 {
-                    this->z_callbak(this->father, val);
+                    this->m_callbak(this->m_father, val, size);
                 }
             }
         }

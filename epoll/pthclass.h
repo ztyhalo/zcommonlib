@@ -14,7 +14,8 @@
 
 #include <atomic>
 #include <string>
-#include "zprint.h"
+// #include "zprint.h"
+#include "printfclass.h"
 
 using namespace std;
 
@@ -59,7 +60,7 @@ class CallBack_T
     }
     virtual ~CallBack_T()
     {
-        zprintf3("destory CallBack_T!\n");
+        g_debugP->zprintf("destory CallBack_T!\n");
     }
 
     int (*m_callbak)(F* pro, DTYPE val,int len);
@@ -80,7 +81,39 @@ int CallBack_T< DTYPE, F >::set_z_callback(int (*callback)(F* pro, DTYPE, int), 
     return -1;
 }
 
+//修改添加单独的callback类，添加回调函数为数据类型指针及长度
+template < class DTYPE, class F >
+class CallBackPoint_T
+{
+  public:
+    F* m_father;
+    int (*m_callbak)(F* pro, DTYPE * val,int len);
 
+  public:
+    CallBackPoint_T():m_father(NULL),m_callbak(NULL)
+    {
+        ;
+    }
+    virtual ~CallBackPoint_T()
+    {
+        g_debugP->zprintf("destory CallBackPoint_T!\n");
+    }
+  public:
+    int setCallback(int (*callback)(F* pro, DTYPE *, int), F* arg);
+
+};
+
+template < class DTYPE, class F >
+int CallBackPoint_T< DTYPE, F >::setCallback(int (*callback)(F* pro, DTYPE *, int), F* arg)
+{
+    if (callback != NULL)
+    {
+        m_callbak = callback;
+        m_father    = arg;
+        return 0;
+    }
+    return -1;
+}
 
 //线程回调类
 template < class DTYPE, class F >
@@ -93,7 +126,7 @@ public:
     Call_B_T();
     virtual ~Call_B_T()
     {
-        zprintf3("destory Call_B_T!\n");
+        g_debugP->zprintf("destory Call_B_T!\n");
         this->running = 0;
     }
 
