@@ -130,14 +130,21 @@ void TwoBufPthT< DTYPE, N,  SIZE, F >::run(void)
     {
         if (sem_wait(&this->m_sem)== 0)
         {
-            DTYPE val[SIZE];
-            int size = this->readBufData(val, SIZE);
-            if (size > 0)
+            while (1)
             {
-                if (this->m_callbak != NULL) //执行操作
+
+
+                DTYPE val[SIZE];
+                int size = this->readBufData(val, SIZE);
+                if (size > 0)
                 {
-                    this->m_callbak(this->m_father, val, size);
+                    if (this->m_callbak != NULL) //执行操作
+                    {
+                        this->m_callbak(this->m_father, val, size);
+                    }
                 }
+                else
+                    break;
             }
         }
         else

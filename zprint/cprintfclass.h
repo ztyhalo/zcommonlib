@@ -40,7 +40,7 @@ using namespace std;
 //     void hprintf(const char * format, ...);
 // };
 
-class CPrintfClass : public TwoBufPthT<char, 20, 1024, CPrintfClass>
+class CPrintfClass : public TwoBufPthT<char, 40, 1024, CPrintfClass>
 {
 private:
     CPrintfClass();  // 或 protected

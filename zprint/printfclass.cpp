@@ -3,7 +3,7 @@
 #include "version.h"
 #include <stdarg.h>
 
-PrintfClass * PrintfClass::m_pSelf = NULL;
+// PrintfClass * PrintfClass::m_pSelf = NULL;
 PrintfClass *g_debugP = PrintfClass::getInstance();
 
 static int hnOpenPlevelConfig(const char * file)
@@ -36,14 +36,38 @@ PrintfClass::PrintfClass():m_pfd(stdout),m_mark(0),m_level(PRINT_PRO)
     pthread_mutex_init(&m_printMut, NULL);
 }
 
-PrintfClass * PrintfClass::getInstance(void)
+PrintfClass::~PrintfClass()
 {
-    if(m_pSelf == NULL)
+    printf("destory PrintfClass!\n");
+    if(m_pfd != stdout && m_pfd != NULL)
     {
-        m_pSelf = new PrintfClass();
+        fflush(m_pfd);
+        // int fd = fileno(m_pfd);
+        // fsync(fd);
+        fclose(m_pfd);
+        m_pfd = NULL;
+        int ret = pthread_mutex_destroy(&m_printMut);
+        if (ret != 0) {
+            // 错误处理
+            if (ret == EBUSY) {
+                printf("mutex busy!");
+            } else if (ret == EINVAL) {
+                printf("mutex invalid!\n");
+            }
+        }
     }
-    return m_pSelf;
+    printf("PrintfClass destruct end!\n");
 }
+
+// PrintfClass * PrintfClass::getInstance(void)
+// {
+//     if(m_pSelf == NULL)
+//     {
+//         m_pSelf = new PrintfClass();
+//     }
+//     return m_pSelf;
+// }
+
 bool PrintfClass::lock()
 {
     return pthread_mutex_lock(&m_printMut);

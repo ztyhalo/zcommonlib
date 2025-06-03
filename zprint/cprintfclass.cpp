@@ -21,7 +21,7 @@ int writePrintfCallBack(CPrintfClass* pro, char * val,int len)
             printf("printf write error %d:%d!\n", len, writelen);
             return -1;
         }
-        fflush(pro->m_pfd);
+        // fflush(pro->m_pfd);
         return 0;
     }
     else
@@ -45,6 +45,13 @@ CPrintfClass::CPrintfClass():m_pfd(stdout),m_mark(0),m_level(PRINT_PRO),m_name(p
 CPrintfClass::~CPrintfClass()
 {
     printf("destory CPrintfClass!\n");
+    if(this->running)
+    {
+        this->running = 0;
+        sem_post(&this->m_sem);
+        this->waitEnd();
+    }
+
     lock_guard<MUTEX_CLASS> locker(m_mutex);
     if(m_pfd != stdout && m_pfd != NULL)
     {
