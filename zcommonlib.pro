@@ -34,6 +34,7 @@ INCLUDEPATH = .\
 
 
 SOURCES += \
+    zprint/printfclass.cpp \
     bufmodel/ZBufModel.cpp \
     date/com_date.cpp \
     epoll/e_poll.cpp \
@@ -55,9 +56,8 @@ SOURCES += \
     timer/timers.cpp \
     udp/udp.cpp \
     zprint/cprintfclass.cpp \
-    zprint/netprint.cpp \
-    zprint/printfclass.cpp \
-    zprint/zprint.cpp
+    zprint/netprint.cpp
+
 
 HEADERS += \
     bufmodel/TwoBufPthT.h \
@@ -97,9 +97,9 @@ HEADERS += \
     tcp/tcp_client.h \
     timer/timers.h \
     udp/udp.h \
+    zprint/printfclass.h \
     zprint/cprintfclass.h \
     zprint/netprint.h \
-    zprint/printfclass.h \
     zprint/printfconf.h \
     zprint/version.h \
     zprint/zprint.h

@@ -2,7 +2,7 @@
 #include "printfconf.h"
 #include "version.h"
 #include <stdarg.h>
-
+#include <string.h>
 // PrintfClass * PrintfClass::m_pSelf = NULL;
 PrintfClass *g_debugP = PrintfClass::getInstance();
 
@@ -15,7 +15,7 @@ static int hnOpenPlevelConfig(const char * file)
     fp = fopen(file, "r");
     if(fp == NULL)
     {
-        g_debugP->zprintf("hn m_level config no!\n");
+        printf("hn m_level config no!\n");
         return -1;
     }
     memset(buf, 0x00, 8);
@@ -31,9 +31,11 @@ static int hnOpenPlevelConfig(const char * file)
     return i;
 }
 
-PrintfClass::PrintfClass():m_pfd(stdout),m_mark(0),m_level(PRINT_PRO)
+PrintfClass::PrintfClass():m_pfd(stdout),m_mark(0),m_level(PRINT_PRO),m_name(program_invocation_short_name)
 {
+    printf("PrintfClass init!\n");
     pthread_mutex_init(&m_printMut, NULL);
+    printfClassInit(DEBUG_F_DIR,"");
 }
 
 PrintfClass::~PrintfClass()
@@ -59,14 +61,7 @@ PrintfClass::~PrintfClass()
     printf("PrintfClass destruct end!\n");
 }
 
-// PrintfClass * PrintfClass::getInstance(void)
-// {
-//     if(m_pSelf == NULL)
-//     {
-//         m_pSelf = new PrintfClass();
-//     }
-//     return m_pSelf;
-// }
+
 
 bool PrintfClass::lock()
 {
@@ -82,7 +77,7 @@ void PrintfClass::printfClassInit(const string & dir, const string & name)
 {
 
     struct timeval tv;
-    char buf[48];
+    char buf[256];
 
 
     if(!dir.empty())
@@ -95,23 +90,27 @@ void PrintfClass::printfClassInit(const string & dir, const string & name)
         {
             if (access(dir.c_str(), F_OK) == 0) // dir exist
             {
-                string dirlog;
+                string dirlog = dir;
                 if(name.empty())
                 {
+
+                    string delete_file;
+                    delete_file = "find " + dir + " -type f -mtime +30 -exec rm -rf {} \\;";
+                    system(delete_file.c_str( ));
 
                     struct tm *p;
                     gettimeofday(&tv, NULL);
                     p = localtime(&tv.tv_sec);
                     memset(buf, 0x00, sizeof(buf));
-                    sprintf(buf,"%02d-%02d_%02d_%02d_%02d.log",
-                        1+p->tm_mon, p->tm_mday,
+                    sprintf(buf,"%s_%04d_%02d-%02d_%02d_%02d_%02d.log",
+                        m_name.c_str( ), 1900 + p->tm_year, 1+p->tm_mon, p->tm_mday,
                         p->tm_hour, p->tm_min, p->tm_sec);
                     string log = buf;
 
-                    dirlog = dir + log;
+                    dirlog += log;
                 }
                 else
-                    dirlog = name;
+                    dirlog += name;
                 string lev    = dir + "m_level";
 
                 int val = hnOpenPlevelConfig(lev.c_str());
@@ -129,7 +128,7 @@ void PrintfClass::printfClassInit(const string & dir, const string & name)
                 else
                 {
                     m_mark = 1;
-                    g_debugP->timemsprintf("commlib version %d_%d!\n",MAIN_VER, SLAVE_VER);
+                    timemsprintf("commlib version %d_%d!\n",MAIN_VER, SLAVE_VER);
 
                 }
             }
@@ -212,7 +211,7 @@ void PrintfClass::timeprintf(const char * format, ...)
         gettimeofday(&tv, NULL);
         p = localtime(&tv.tv_sec);
 
-        fprintf(m_pfd,"%d-%02d-%02d %02d:%03d:%02d ",
+        fprintf(m_pfd,"%d-%02d-%02d %02d:%02d:%02d ",
             1900+p->tm_year, 1+p->tm_mon, p->tm_mday,
             p->tm_hour, p->tm_min, p->tm_sec);
         vfprintf(m_pfd, format, args);
@@ -247,4 +246,19 @@ void PrintfClass::timemsprintf(const char * format, ...)
 
     }
     unlock();
+}
+
+int  PrintfClass::writeData(char * buf, int len)
+{
+    lock();
+    if(m_pfd != NULL)
+    {
+        int ret = fwrite(buf, 1, len, m_pfd);
+        // int ret =   fprintf(m_pfd,"%s", buf);
+        // fflush(m_pfd);
+        unlock();
+        return ret;
+    }
+    unlock();
+    return -1;
 }

@@ -9,12 +9,12 @@
 #include <sys/time.h>
 #include "printfconf.h"
 #include "printfclass.h"
-#include "cprintfclass.h"
+
 
 
 
 extern PrintfClass * g_debugP;
-extern CPrintfClass *g_pCprintf;
+
 
 
 #define timeprf(...) do { time_t now;\
@@ -67,6 +67,14 @@ extern CPrintfClass *g_pCprintf;
     #define prop_printf(...)
     #endif
 #else
+#include "cprintfclass.h"
+#ifdef __CPRINTF_CLASS__CPP__
+    CPrintfClass *g_pCprintf = CPrintfClass::getInstance();
+#else
+    extern CPrintfClass *g_pCprintf;
+#endif
+
+
     #if PRINT_PRO >=1
     #define zprintf1 g_pCprintf->timemsprintf
     #else

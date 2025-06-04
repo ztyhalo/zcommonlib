@@ -1,21 +1,24 @@
+#define __CPRINTF_CLASS__CPP__
 #include "cprintfclass.h"
-// #include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include "version.h"
-#include "printfconf.h"
+#include "printfclass.h"
+#include <string.h>
+#include "zprint.h"
 
 
 // CPrintfClass * CPrintfClass::m_pCSelf = NULL;
-CPrintfClass *g_pCprintf = CPrintfClass::getInstance();
+
 
 
 
 int writePrintfCallBack(CPrintfClass* pro, char * val,int len)
 {
-    if(pro != NULL && val != NULL && len > 0 && pro->m_pfd != NULL)
+    if(pro != NULL && val != NULL && len > 0 && g_debugP != NULL)
     {
-        int writelen = fwrite(val, 1, len, pro->m_pfd);
+        // int writelen = fwrite(val, 1, len, pro->m_pfd);
+        int writelen = g_debugP->writeData(val, len);
         if(writelen != len)
         {
             printf("printf write error %d:%d!\n", len, writelen);
@@ -30,7 +33,8 @@ int writePrintfCallBack(CPrintfClass* pro, char * val,int len)
 
 CPrintfClass::CPrintfClass():m_pfd(stdout),m_mark(0),m_level(PRINT_PRO),m_name(program_invocation_short_name)
 {
-    ;
+    printf("cprint init!\n");
+    printfInit(DEBUG_F_DIR, "");
 }
 
 // CPrintfClass * CPrintfClass::getInstance(void)
@@ -52,47 +56,45 @@ CPrintfClass::~CPrintfClass()
         this->waitEnd();
     }
 
-    lock_guard<MUTEX_CLASS> locker(m_mutex);
-    if(m_pfd != stdout && m_pfd != NULL)
-    {
-        fflush(m_pfd);
-        fclose(m_pfd);
-        m_pfd = NULL;
-    }
+    // lock_guard<MUTEX_CLASS> locker(m_mutex);
+    // if(m_pfd != stdout && m_pfd != NULL)
+    // {
+    //     fflush(m_pfd);
+    //     fclose(m_pfd);
+    //     m_pfd = NULL;
+    // }
     printf("CPrintfClass destruct end!\n");
 }
 
-static int printLevelConfig(const char * file)
-{
-    char buf[8];
-    int i = 0;
-    FILE *fp;
+// static int printLevelConfig(const char * file)
+// {
+//     char buf[8];
+//     int i = 0;
+//     FILE *fp;
 
-    fp = fopen(file, "r");
-    if(fp == NULL)
-    {
-        g_pCprintf->zprintf("hn m_level config no!\n");
-        return -1;
-    }
-    memset(buf, 0x00, 8);
+//     fp = fopen(file, "r");
+//     if(fp == NULL)
+//     {
+//         printf("hn m_level config no!\n");
+//         // g_pCprintf->zprintf("hn m_level config no!\n");
+//         return -1;
+//     }
+//     memset(buf, 0x00, 8);
 
-    if(fgets(buf, 8, fp) != NULL)
-    {
-        i = atoi(buf);
-    }
+//     if(fgets(buf, 8, fp) != NULL)
+//     {
+//         i = atoi(buf);
+//     }
 
-    fclose(fp);
+//     fclose(fp);
 
 
-    return i;
-}
+//     return i;
+// }
 
 
 void CPrintfClass::printfInit(const string & dir, const string & name)
 {
-
-    struct timeval tv;
-    char buf[256];
 
     // lock_guard<MUTEX_CLASS> locker(m_mutex);
     if(!dir.empty())
@@ -105,43 +107,58 @@ void CPrintfClass::printfInit(const string & dir, const string & name)
         {
             if (access(dir.c_str(), F_OK) == 0) // dir exist
             {
-                string dirlog = dir;
-                if(name.empty())
-                {
-
-                    struct tm *p;
-                    gettimeofday(&tv, NULL);
-                    p = localtime(&tv.tv_sec);
-                    memset(buf, 0x00, sizeof(buf));
-                    sprintf(buf,"%s_%04d_%02d-%02d_%02d_%02d_%02d.log",
-                        m_name.c_str( ), 1900 + p->tm_year, 1+p->tm_mon, p->tm_mday,
-                        p->tm_hour, p->tm_min, p->tm_sec);
-                    string log = buf;
-
-                    dirlog += log;
-                }
-                else
-                    dirlog += name;
-                string lev    = dir + "m_level";
-
-                int val = printLevelConfig(lev.c_str());
-                if(val > 0)
-                {
-                    m_level = val;
-                }
+                // printf("cprint access!\n");
+                // struct timeval tv;
+                // char buf[256];
+                // string dirlog = dir;
 
 
-                m_pfd =  fopen(dirlog.c_str(), "a+");
+                // if(name.empty())
+                // {
+
+                //     string delete_file;
+                //     delete_file = "find " + dir + " -type f -mtime +30 -exec rm -rf {} \\;";
+                //     system(delete_file.c_str( ));
+
+                //     struct tm *p;
+                //     gettimeofday(&tv, NULL);
+                //     p = localtime(&tv.tv_sec);
+                //     memset(buf, 0x00, sizeof(buf));
+                //     sprintf(buf,"%s_%04d_%02d-%02d_%02d_%02d_%02d.log",
+                //         m_name.c_str( ), 1900 + p->tm_year, 1+p->tm_mon, p->tm_mday,
+                //         p->tm_hour, p->tm_min, p->tm_sec);
+
+                //     string log = buf;
+
+                //     dirlog += log;
+                // }
+                // else
+                //     dirlog += name;
+
+                // string lev    = dir + "m_level";
+
+                // int val = printLevelConfig(lev.c_str());
+                // if(val > 0)
+                // {
+                //     m_level = val;
+                // }
+                m_pfd = g_debugP->m_pfd;
+                m_level = g_debugP->m_level;
+
+
+                // m_pfd =  fopen(dirlog.c_str(), "a+");
                 if(m_pfd == NULL)
                 {
-                    printf("file %s open fail!\n", dirlog.c_str());
+                    printf("CPrintfClass file %s open fail!\n", name.c_str());
                 }
                 else
                 {
                     m_mark = 1;
                     this->setCallback(writePrintfCallBack, this);
+
                     this->start("cprintfpth");
-                    g_pCprintf->timemsprintf("commlib version %d_%d!\n",MAIN_VER, SLAVE_VER);
+                    timemsprintf("CPrintfClass commlib version %d_%d!\n",MAIN_VER, SLAVE_VER);
+
 
                 }
 
@@ -252,3 +269,5 @@ void CPrintfClass::hprintf(const char * format, ...)
     fflush(stdout);
 
 }
+
+#undef __CPRINTF_CLASS__CPP__

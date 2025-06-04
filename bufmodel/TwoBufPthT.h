@@ -7,6 +7,7 @@
 #include "mutex/mutex_class.h"
 #include <semaphore.h>
 #include <pthclass.h>
+#include <string.h>
 
 
 template<class DTYPE, int N = 2, int SIZE = 2048>
@@ -130,9 +131,8 @@ void TwoBufPthT< DTYPE, N,  SIZE, F >::run(void)
     {
         if (sem_wait(&this->m_sem)== 0)
         {
-            while (1)
+            // while (1)
             {
-
 
                 DTYPE val[SIZE];
                 int size = this->readBufData(val, SIZE);
@@ -143,12 +143,10 @@ void TwoBufPthT< DTYPE, N,  SIZE, F >::run(void)
                         this->m_callbak(this->m_father, val, size);
                     }
                 }
-                else
-                    break;
+                // else
+                //     break;
             }
         }
-        else
-            break;
     }
 }
 

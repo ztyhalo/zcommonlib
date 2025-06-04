@@ -4,18 +4,21 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include <string.h>
-#include <time.h>
+// #include <string.h>
+// #include <time.h>
 #include <sys/time.h>
 
 using namespace std;
 
 class PrintfClass
 {
-  private:
+  public:
     FILE * m_pfd;
     int    m_mark;
     int    m_level;
+  private:
+
+    string m_name;
     pthread_mutex_t m_printMut;
     PrintfClass();
     ~PrintfClass();
@@ -36,6 +39,7 @@ class PrintfClass
     void timeprintf(const char * format, ...);
     void timemsprintf(const char * format, ...);
     void hprintf(const char * format, ...);
+    int  writeData(char * buf, int len);
 };
 
 extern PrintfClass * g_debugP;

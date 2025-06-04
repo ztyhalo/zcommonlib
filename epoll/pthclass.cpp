@@ -1,24 +1,24 @@
 #include "pthclass.h"
-#include "zprint.h"
+// #include "zprint.h"
 #include <sys/prctl.h>
 
 Pth_Class::~Pth_Class()
 {
-    zprintf3("destory Pth_Class pid %d name %s!\n", (int)m_pid, m_name.c_str());
+    g_debugP->zprintf("destory Pth_Class pid %d name %s!\n", (int)m_pid, m_name.c_str());
     if(m_pid > 0){
         running = 0;
         pthread_cancel(m_pid);
         pthread_join(m_pid, NULL);
         m_pid = 0;
     }
-    zprintf3("destory Pth_Class delete over!\n");
+    g_debugP->zprintf("destory Pth_Class delete over!\n");
 }
 
 void *Pth_Class::start_thread(void * arg)
 {
-    zprintf3("zty pid start!\n");
+    // g_debugP->zprintf("zty pid start!\n");
 #if (__GLIBC__ > 2) || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 4)  // glibc ≥ 2.4 的代码逻辑
-    zprintf3("glibc version: %d.%d!\n", __GLIBC__, __GLIBC_MINOR__);
+    g_debugP->zprintf("glibc version: %d.%d!\n", __GLIBC__, __GLIBC_MINOR__);
 #else
     int res = pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS,   NULL);   //设置立即取消
     if (res != 0)
@@ -42,18 +42,18 @@ int Pth_Class::start(const string & name)
         {
             running = 1;
             m_name = name;
-            zprintf3("zty create pid %d name %s!\n", (int)m_pid, name.c_str());
+            g_debugP->zprintf("zty create pid %d name %s!\n", (int)m_pid, name.c_str());
             return 0;
         }
         else
         {
-            zprintf1("creat pthread failed!\n");
+            g_debugP->zprintf("creat pthread failed!\n");
             return -1;
         }
     }
     else
     {
-        zprintf1("pid %d have creat\n",(int)m_pid);
+        g_debugP->timemsprintf("pid %d have creat\n",(int)m_pid);
         return -1;
     }
 }
@@ -61,7 +61,7 @@ int Pth_Class::start(const string & name)
 int Pth_Class::stop()
 {
 
-    zprintf3("stop pid %d name %s!\n", (int)m_pid, m_name.c_str());
+    g_debugP->zprintf("stop pid %d name %s!\n", (int)m_pid, m_name.c_str());
     if(m_pid > 0)
     {
         running = 0;
@@ -69,19 +69,19 @@ int Pth_Class::stop()
         pthread_join(m_pid, NULL);
         m_pid = 0;
     }
-    zprintf3("stop pid %d end!\n",(int)m_pid);
+    g_debugP->zprintf("stop pid %d end!\n",(int)m_pid);
     return 0;
 }
 
 int Pth_Class::waitEnd()
 {
-    zprintf3("waitEnd pid %d name %s!\n", (int)m_pid, m_name.c_str());
+    g_debugP->zprintf("waitEnd pid %d name %s!\n", (int)m_pid, m_name.c_str());
     if(m_pid > 0)
     {
         running = 0;
         pthread_join(m_pid, NULL);
         m_pid = 0;
     }
-    zprintf3("waitEnd pid %d end!\n",(int)m_pid);
+    g_debugP->zprintf("waitEnd pid %d end!\n",(int)m_pid);
     return 0;
 }
