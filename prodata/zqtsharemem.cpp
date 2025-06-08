@@ -130,7 +130,7 @@ int ZQTShareMem::readCreateData(int size, const QString & keyid)
     m_shmKey = keyid;
 
     m_lhshare.setKey(m_shmKey);
-
+    zprintf3("ZQTShareMem read create %s!\n", keyid.toStdString().c_str());
     if (!m_lhshare.attach())
     {
         zprintf1("ZQTShareMem can't attatch qt share\n", keyid.toStdString().c_str());
@@ -143,6 +143,23 @@ int ZQTShareMem::readCreateData(int size, const QString & keyid)
         zprintf1("ZQTShareMem read create size %d create size %d!\n", size, m_lhshare.size());
         return -2;
     }
+
+    return 0;
+}
+
+int ZQTShareMem::readCreate(const QString & keyid)
+{
+    m_shmKey = keyid;
+
+    m_lhshare.setKey(m_shmKey);
+
+    if (!m_lhshare.attach())
+    {
+        zprintf1("ZQTShareMem can't attatch qt share\n", keyid.toStdString().c_str());
+        return -1;
+    }
+
+    m_size =  m_lhshare.size();
 
     return 0;
 }

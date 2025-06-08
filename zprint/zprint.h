@@ -37,7 +37,7 @@ extern PrintfClass * g_debugP;
            p->tm_hour, p->tm_min, p->tm_sec, tv.tv_usec);\
     printf( __VA_ARGS__);}while(0)
 
-#define PRINTMODE 2
+#define PRINTMODE 1
 #if PRINTMODE == 1
     #if PRINT_PRO >=1
     #define zprintf1 g_debugP->timemsprintf

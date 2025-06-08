@@ -39,6 +39,7 @@ class QTShareDataT :public ZQTShareMem, public ShareDataProcessT<T>
     T*   creat_data(int size, const QString & keyid, AccessMode mode);
     int  create_data(int size, const QString & keyid);
     int  read_creat_data(int size, const QString & keyid = "lhshare");
+    int  createReadData(const QString & keyid = "lhshare");
 
     void lock_qtshare(void);
     void unlock_qtshare(void);
@@ -136,6 +137,27 @@ int QTShareDataT< T >::read_creat_data(int size, const QString & keyid)
             zprintf1("QTShareDataT read create size %d create size %d!\n", size, this->m_size);
             return -1;
         }
+        this->m_classSize = (int)(this->m_size / sizeof(T));
+        return 0;
+    }
+    else
+    {
+        zprintf1("QTShareDataT read create %s error!\n", keyid.toStdString().c_str());
+        return -2;
+    }
+
+}
+template < class T >
+int QTShareDataT< T >::createReadData(const QString & keyid)
+{
+
+    if(readCreate(keyid) == 0)
+    {
+        ZLockerClass<QTShareDataT< T >> locker(this);
+        locker.lock();
+        this->m_data = (T*)data();
+        this->m_size = this->size();
+
         this->m_classSize = (int)(this->m_size / sizeof(T));
         return 0;
     }

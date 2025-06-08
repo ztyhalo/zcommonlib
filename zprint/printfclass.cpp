@@ -253,6 +253,7 @@ int  PrintfClass::writeData(char * buf, int len)
     lock();
     if(m_pfd != NULL)
     {
+        fseek(m_pfd, 0, SEEK_END); // 文件指针置于尾部
         int ret = fwrite(buf, 1, len, m_pfd);
         // int ret =   fprintf(m_pfd,"%s", buf);
         // fflush(m_pfd);

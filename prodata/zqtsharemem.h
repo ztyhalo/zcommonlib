@@ -26,7 +26,7 @@ public:
     }
     virtual ~ZQTShareMem()
     {
-        zprintf3("destory ZQTShareMem!\n");
+        zprintf3("destory ZQTShareMem %s!\n", m_shmKey.toStdString().c_str());
         if (m_lhshare.isAttached())
         {
             zprintf3("qt share have attach!\n");
@@ -34,7 +34,7 @@ public:
         }
         if(m_createShm)
         {
-            zprintf3("ZQTShareMem create release!\n");
+            zprintf3("ZQTShareMem create release %s!\n", m_shmKey.toStdString().c_str());
             destory();
             m_createShm = false;
         }
@@ -50,7 +50,7 @@ public:
     bool semLock() override;
     bool semUnlock() override;
     int     readCreateData(int size, const QString & keyid);
-
+    int     readCreate(const QString & keyid);
 };
 
 #endif // ZQTSHAREMEM_H
