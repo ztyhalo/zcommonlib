@@ -2,6 +2,20 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
+
+void    ZQTShareMem::getShmInfo(void)
+{
+    key_t unix_key;
+
+    unix_key = ftok(m_lhshare.nativeKey().toStdString().c_str(), 'Q');
+    if(unix_key == -1)
+    {
+        return;
+    }
+    int id = shmget(unix_key, 0, 0400);
+
+    zprintf1("shm %s get unix_key %d id %d!\n", m_lhshare.nativeKey().toStdString().c_str() ,unix_key, id);
+}
 bool ZQTShareMem::destory(void)
 {
     key_t unix_key;
@@ -118,7 +132,7 @@ int ZQTShareMem::newcreateData(int size)
         return -4;
     }
 
-
+    getShmInfo();
     m_createShm = true;
 
 
@@ -143,7 +157,7 @@ int ZQTShareMem::readCreateData(int size, const QString & keyid)
         zprintf1("ZQTShareMem read create size %d create size %d!\n", size, m_lhshare.size());
         return -2;
     }
-
+    getShmInfo();
     return 0;
 }
 

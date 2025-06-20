@@ -112,6 +112,16 @@ public:
         this->start(pthName);
         return 0;
     }
+    void stopMsgRev(void)
+    {
+        if(this->running)
+        {
+            this->running = 0;
+            this->releaseMsg();
+            this->waitEnd();
+            zprintf3("MsgRevBackClass stop end!\n");
+        }
+    }
 };
 
 #endif /*__MSGPROCESS_H__*/

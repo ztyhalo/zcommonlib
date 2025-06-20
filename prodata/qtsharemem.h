@@ -33,7 +33,8 @@ class QTShareDataT :public ZQTShareMem, public ShareDataProcessT<T>
     }
     virtual ~QTShareDataT()
     {
-        zprintf3("QTShareDataT destruct!\n");
+        printf("QTShareDataT destruct %s!\n", m_shmKey.toStdString().c_str());
+        zprintf3("QTShareDataT destruct %s!\n", m_shmKey.toStdString().c_str());
     }
 
     T*   creat_data(int size, const QString & keyid, AccessMode mode);
@@ -100,9 +101,7 @@ T* QTShareDataT< T >::creat_data(int size, const QString & keyid, AccessMode mod
 {
 
     this->m_data = (T *)createData(size, keyid, mode);
-    if(this->m_data == NULL)
-        zprintf1("QTShareDataT create %s error!\n", keyid.toStdString().c_str());
-    else
+    if(this->m_data != NULL)
     {
 
         ZLockerClass<QTShareDataT< T >> locker(this);
@@ -118,6 +117,8 @@ T* QTShareDataT< T >::creat_data(int size, const QString & keyid, AccessMode mod
         this->m_classSize = (int)(this->m_size / sizeof(T));
 
     }
+    else
+      zprintf1("QTShareDataT create %s error!\n", keyid.toStdString().c_str());
     return this->m_data;
 }
 

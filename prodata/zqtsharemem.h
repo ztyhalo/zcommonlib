@@ -35,7 +35,7 @@ public:
         if(m_createShm)
         {
             zprintf3("ZQTShareMem create release %s!\n", m_shmKey.toStdString().c_str());
-            destory();
+            // destory();
             m_createShm = false;
         }
     }
@@ -44,6 +44,7 @@ public:
     void    *data() override;
     int     newcreateData(int size);
     void*   createData(int size, const QString & keyid, AccessMode mode = Open);
+    void    getShmInfo(void);
 
     // bool    lock(void);
     // bool    unlock(void);
